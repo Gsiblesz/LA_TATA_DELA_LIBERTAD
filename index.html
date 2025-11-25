@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Panel de Formularios | La Tata de la Libertad</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="layout">
+      <aside class="sidebar">
+        <div class="brand">
+          <p class="eyebrow">Panel de accesos</p>
+          <h1>Formularios<br />LA TATA DE LA LIBERTAD</h1>
+          <p class="subtitle">Gestiona solicitudes, registros y mermas.</p>
+        </div>
+        <nav class="sidebar__nav">
+          <button class="nav-btn active" data-view-target="home">Menú LA TATA</button>
+          <button class="nav-btn" data-view-target="solicitudes">Solicitudes</button>
+          <button class="nav-btn" data-view-target="registros">Registros</button>
+          <button class="nav-btn" data-view-target="mermas">Merma BC</button>
+          <button class="nav-btn" data-view-target="catalogo">Catálogo de productos</button>
+        </nav>
+        <footer class="sidebar__footer">
+          <small>Elaborado por el pasante de producción Gerardo Siblesz</small>
+        </footer>
+      </aside>
+
+      <main class="main">
+        <div id="env-warning" class="alert alert--warn hidden">
+          Define la URL del Apps Script en <code>script.js</code> (constante <code>APPS_SCRIPT_URL</code>)
+          para habilitar la sincronización con Google Sheets.
+        </div>
+
+        <section class="view active" data-view="home">
+          <article class="hero-card">
+            <div>
+              <p class="eyebrow">Panel de accesos</p>
+              <h2>Bienvenido al menú de solicitudes y registros de LA TATA DE LA LIBERTAD</h2>
+              <p>
+                Desde aquí podrás registrar solicitudes de productos terminados, confirmar entregas y documentar mermas.
+                Todos los formularios se conectan a la misma hoja de Google Sheets.
+              </p>
+            </div>
+            <div class="hero-card__cta hero-card__cta--link">
+              <a
+                class="btn"
+                href="https://menu-formularios-la-tata.vercel.app/"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Volver al menú principal
+              </a>
+            </div>
+          </article>
+
+          <div class="card-grid">
+            <article class="action-card">
+              <p class="eyebrow">Solicitudes</p>
+              <h3>Registrar nueva solicitud</h3>
+              <p>Captura fecha, hora, sede y los productos que requiere cada centro.</p>
+              <button class="btn btn--ghost" data-view-target="solicitudes">Ir a Solicitudes</button>
+            </article>
+            <article class="action-card">
+              <p class="eyebrow">Registros</p>
+              <h3>Confirmar entregas</h3>
+              <p>Actualiza cantidades entregadas y responsables, incluso sin una solicitud previa.</p>
+              <button class="btn btn--ghost" data-view-target="registros">Ir a Registros</button>
+            </article>
+            <article class="action-card">
+              <p class="eyebrow">Merma</p>
+              <h3>Control de merma BC</h3>
+              <p>Documenta las mermas de la sede BC para mantener el historial actualizado.</p>
+              <button class="btn btn--ghost" data-view-target="mermas">Ir a Merma</button>
+            </article>
+          </div>
+        </section>
+
+        <section class="view" data-view="solicitudes">
+          <header class="view__header">
+            <div>
+              <p class="eyebrow">Formularios</p>
+              <h2>LA TATA DE LA LIBERTAD · Solicitudes</h2>
+            </div>
+            <button class="btn btn--ghost" data-view-target="catalogo">Ver catálogo</button>
+          </header>
+
+          <form id="solicitudes-form" class="card">
+            <div class="form-grid">
+              <label>
+                <span>Fecha</span>
+                <input type="date" name="fecha" required />
+              </label>
+              <label>
+                <span>Hora</span>
+                <input type="time" name="hora" required />
+              </label>
+              <label>
+                <span>Sede</span>
+                <select name="sede" data-role="sede-select" required></select>
+              </label>
+              <label>
+                <span>Responsable de solicitud</span>
+                <input type="text" name="responsable" placeholder="Nombre y apellido" required />
+              </label>
+            </div>
+
+            <section class="products-box">
+              <div class="products-box__header">
+                <div>
+                  <h3>Productos involucrados</h3>
+                  <p>Selecciona productos del catálogo e indica la cantidad solicitada.</p>
+                </div>
+              </div>
+              <div id="solicitud-product-rows" class="product-rows"></div>
+              <div class="products-box__footer">
+                <button type="button" class="btn btn--pill" id="add-product-row">Agregar producto</button>
+              </div>
+            </section>
+
+            <div class="form-actions">
+              <button type="submit" class="btn">Enviar solicitud</button>
+            </div>
+          </form>
+        </section>
+
+        <section class="view" data-view="registros">
+          <header class="view__header">
+            <div>
+              <p class="eyebrow">Formularios</p>
+              <h2>LA TATA DE LA LIBERTAD · Registros</h2>
+            </div>
+            <button class="btn btn--ghost" data-view-target="solicitudes">Ver solicitudes</button>
+          </header>
+
+          <form id="registros-form" class="card">
+            <div class="form-grid">
+              <label>
+                <span>Fecha</span>
+                <input type="date" name="fecha" required />
+              </label>
+              <label>
+                <span>Hora</span>
+                <input type="time" name="hora" required />
+              </label>
+              <label>
+                <span>Sede</span>
+                <select name="sede" data-role="sede-select" required></select>
+              </label>
+              <label>
+                <span>Responsable de entrega</span>
+                <input type="text" name="responsableEntrega" placeholder="Nombre y apellido" required />
+              </label>
+            </div>
+
+            <section class="products-box">
+              <div class="products-box__header">
+                <div>
+                  <h3>Productos involucrados</h3>
+                  <p>Selecciona cada producto entregado y registra la cantidad correspondiente.</p>
+                </div>
+              </div>
+              <div id="registros-product-rows" class="product-rows"></div>
+
+              <div class="toggle-field">
+                <input type="checkbox" id="sin-solicitud" name="sinSolicitud" />
+                <label for="sin-solicitud">
+                  Registrar entrega sin solicitud previa (el sistema creará una fila con "SIN SOLICITUD").
+                </label>
+              </div>
+
+              <div class="products-box__footer">
+                <button type="button" class="btn btn--pill" id="add-registro-row">Agregar producto</button>
+              </div>
+            </section>
+
+            <div class="form-actions">
+              <button type="submit" class="btn">Actualizar registro</button>
+            </div>
+          </form>
+        </section>
+
+        <section class="view" data-view="mermas">
+          <header class="view__header">
+            <div>
+              <p class="eyebrow">Formularios</p>
+              <h2>LA TATA DE LA LIBERTAD · Merma BC</h2>
+            </div>
+            <button class="btn btn--ghost" data-view-target="catalogo">Ver catálogo</button>
+          </header>
+
+          <form id="merma-form" class="card">
+            <div class="form-grid">
+              <label>
+                <span>Fecha</span>
+                <input type="date" name="fecha" required />
+              </label>
+              <label>
+                <span>Hora</span>
+                <input type="time" name="hora" required />
+              </label>
+              <label>
+                <span>Sede</span>
+                <input type="text" name="sede" value="BC" readonly />
+              </label>
+              <label>
+                <span>Responsable</span>
+                <input type="text" name="responsable" placeholder="Nombre y apellido" required />
+              </label>
+            </div>
+
+            <section class="products-box">
+              <div class="products-box__header">
+                <div>
+                  <h3>Productos involucrados</h3>
+                  <p>Selecciona los productos que generaron merma en BC.</p>
+                </div>
+              </div>
+              <div id="merma-product-rows" class="product-rows"></div>
+              <div class="products-box__footer">
+                <button type="button" class="btn btn--pill" id="add-merma-row">Agregar producto</button>
+              </div>
+            </section>
+
+            <div class="form-actions">
+              <button type="submit" class="btn">Registrar merma</button>
+            </div>
+          </form>
+        </section>
+
+        <section class="view" data-view="catalogo">
+          <header class="view__header">
+            <div>
+              <p class="eyebrow">Catálogo</p>
+              <h2>Catálogo de productos sincronizado</h2>
+              <p class="muted">Fuente: pestaña "PRODUCTOS" del Google Sheets proporcionado.</p>
+            </div>
+            <button class="btn btn--ghost" id="refresh-catalog">Actualizar lista</button>
+          </header>
+
+          <div class="card">
+            <div class="catalog-toolbar">
+              <input type="search" id="catalog-search" placeholder="Buscar por código o descripción" />
+              <span id="catalog-status" class="status-badge">Sincronizando...</span>
+            </div>
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Código</th>
+                    <th>Descripción</th>
+                    <th>Unidad primaria</th>
+                  </tr>
+                </thead>
+                <tbody id="catalog-body">
+                  <tr>
+                    <td colspan="3" class="muted">Sin datos. Actualiza la lista.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <div id="toast" class="toast" aria-live="polite"></div>
+    <datalist id="product-options"></datalist>
+
+    <script>
+      window.APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx4A7MWcSTpPDh1ZiMOqIjyCENf-_eYjzd7iqwtO3G_rl939xgbAo3xB3jzrrWSxwil4Q/exec';
+    </script>
+    <script src="script.js" defer></script>
+  </body>
+</html>

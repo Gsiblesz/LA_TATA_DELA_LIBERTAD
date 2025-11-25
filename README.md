@@ -1,0 +1,52 @@
+# Formularios · LA TATA DE LA LIBERTAD
+
+Implementación estática (HTML/CSS/JS) para administrar los formularios de **Solicitudes**, **Registros** y **Merma** de productos terminados conectados a la hoja de cálculo proporcionada. El proyecto replica la interfaz del formulario de inventario existente e incluye un catálogo sincronizado desde la pestaña `PRODUCTOS` del mismo Google Sheets.
+
+## Contenido
+
+- `index.html`: estructura y vistas del panel (menú, formularios y catálogo).
+- `styles.css`: estilos con la línea gráfica usada previamente.
+- `script.js`: lógica para navegación, catálogo, formularios y comunicación con Apps Script.
+- `GOOGLE_APPS_SCRIPT.md`: instrucciones + código del Apps Script que se despliega junto al Sheets.
+- `vercel.json`: configuración mínima para desplegar el sitio estático en Vercel.
+
+## Requisitos previos
+
+1. Google Sheets con las pestañas `LA TATA DE LA LIBERTAD` y `PRODUCTOS` (ya configuradas con las columnas mostradas en las capturas).
+2. Apps Script desplegado como **Web App** con acceso "Anyone" o "Anyone with the link".
+3. URL pública del Web App copiada en la constante `window.APPS_SCRIPT_URL` ubicada al final de `index.html`.
+
+```html
+<script>
+  window.APPS_SCRIPT_URL = 'https://script.google.com/macros/s/REEMPLAZA_CON_TU_WEB_APP/exec';
+</script>
+```
+
+> **Tip:** si usarás entornos de Vercel, crea un archivo `app-config.js` o script inline diferente para no versionar la URL productiva.
+
+## Cómo ejecutar localmente
+
+1. Instala dependencias opcionales para servir archivos estáticos (por ejemplo `npm install -g serve`).
+2. En la raíz del proyecto, ejecuta `serve .` o usa cualquier servidor HTTP simple. Abrir `index.html` directamente con `file://` puede bloquear las peticiones `fetch` al Apps Script.
+3. Asegúrate de haber pegado la URL del Apps Script antes de probar los formularios.
+
+## Flujo de cada formulario
+
+- **Solicitudes**: registra `Fecha, Hora, Sede, Responsable` y una lista dinámica de productos con cantidades solicitadas. Cada producto genera una fila nueva en la hoja con la columna *FAMILIA* vacía.
+- **Registros**: busca una fila existente por combinación `Fecha + Sede + Código de producto` y actualiza `Cantidad Entregada` y `Responsable Entrega`. Si se marca "registro sin solicitud", se crea una fila nueva con el texto `SIN SOLICITUD` en la columna de responsable de solicitud.
+- **Merma (BC)**: busca la fila correspondiente (Fecha + `BC` + Producto) y actualiza únicamente la columna `MERMA`. La sede está fijada a `BC` en la interfaz.
+- **Catálogo**: consulta la pestaña `PRODUCTOS` del Sheets y permite filtrar por código o descripción. Los datos se guardan en `localStorage` para cargar más rápido sin conexión.
+
+## Despliegue en Vercel
+
+1. Crea un nuevo proyecto en Vercel apuntando a este repositorio/carpeta.
+2. Selecciona **Other** como framework (es un sitio estático). Vercel detectará `index.html` automáticamente.
+3. Publica. Si necesitas diferentes URLs de Apps Script por ambiente, crea una rama por entorno y ajusta el valor de `window.APPS_SCRIPT_URL` antes de desplegar.
+
+## Personalización
+
+- Las sedes disponibles se definen en `script.js` (`const SEDES = [...]`).
+- La paleta de colores y tipografía se controlan en `styles.css`.
+- Puedes desactivar el cache local del catálogo quitando el uso de `localStorage` dentro de `script.js`.
+
+Consulta `GOOGLE_APPS_SCRIPT.md` para ver cómo instalar/actualizar el backend en Apps Script.
