@@ -91,6 +91,9 @@ function initSolicitudesForm() {
 
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
+    if (typeof form.reportValidity === 'function' && !form.reportValidity()) {
+      return;
+    }
     const formData = new FormData(form);
     let items;
 
@@ -204,6 +207,9 @@ function initRegistrosForm() {
 
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
+    if (typeof form.reportValidity === 'function' && !form.reportValidity()) {
+      return;
+    }
     const formData = new FormData(form);
     let items;
 
@@ -308,6 +314,9 @@ function initMermaForm() {
 
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
+    if (typeof form.reportValidity === 'function' && !form.reportValidity()) {
+      return;
+    }
     const formData = new FormData(form);
     let items;
 
@@ -567,12 +576,13 @@ function collectItems(container, quantityLabel, mapper) {
   if (!rows) return [];
 
   const items = [];
-  rows.forEach((row) => {
+  for (const row of rows) {
     const combo = row.querySelector('[data-role="product-combo"]');
     const quantityInput = row.querySelector('input[type="number"]');
     const product = getProductFromInput(combo);
     if (!product) {
-      return;
+      combo?.focus?.();
+      throw new Error('Selecciona un producto del catálogo en cada fila.');
     }
 
     const quantity = parseIntegerQuantity(quantityInput?.value);
@@ -582,7 +592,7 @@ function collectItems(container, quantityLabel, mapper) {
     }
 
     items.push(mapper(product, quantity));
-  });
+  }
 
   return items;
 }
