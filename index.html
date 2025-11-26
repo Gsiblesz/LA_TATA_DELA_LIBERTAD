@@ -207,7 +207,10 @@
               </label>
               <label>
                 <span>Sede</span>
-                <input type="text" name="sede" value="BC" readonly />
+                <select name="sede" required>
+                  <option value="BC">BC</option>
+                  <option value="LPG">LPG</option>
+                </select>
               </label>
               <label>
                 <span>Responsable</span>
@@ -274,7 +277,7 @@
     <datalist id="product-options"></datalist>
 
     <script>
-      window.APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzZSikdfvUSo2LP642MNHJm8WevQgFG010hFdwhl0Ew7lFDr_ChvQ9lkbW_VUx_L8k8/exec';
+      window.APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyjZNxrvz5bvMKEs1pbtMF3iareC20mPnt6d3CT5oT2VXaK4vvVYgLEn5ZjE327DJHAGg/exec';
     </script>
     <script src="script.js" defer></script>
   </body>
