@@ -348,7 +348,7 @@ function initMermaForm() {
     try {
       toggleFormLoading(form, true);
       await postData('recordMerma', payload);
-      showToast('Mermas registradas para BC.', 'success');
+      showToast(`Mermas registradas para ${payload.sede}.`, 'success');
       form.reset();
       resetMermaRows();
     } catch (error) {

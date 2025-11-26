@@ -169,7 +169,7 @@ function appendEntregaSinSolicitud_(sheet, payload, item, qty) {
 }
 
 function recordMerma_(payload) {
-  validateRequired_(payload, ['fecha']);
+  validateRequired_(payload, ['fecha', 'sede']);
   const items = Array.isArray(payload.items) ? payload.items : [];
   if (!items.length) {
     throw new Error('Debes enviar al menos un producto.');
@@ -182,7 +182,7 @@ function recordMerma_(payload) {
       throw new Error(`La merma debe ser mayor a cero (${item.productCode || 'sin código'}).`);
     }
 
-    const rowIndex = findRowIndex_(sheet, payload.fecha, 'BC', item.productCode);
+    const rowIndex = findRowIndex_(sheet, payload.fecha, payload.sede, item.productCode);
     if (!rowIndex) {
       throw new Error(
         `No se encontró una fila para esa fecha/producto en la sede BC (${item.productCode || 'sin código'}).`
