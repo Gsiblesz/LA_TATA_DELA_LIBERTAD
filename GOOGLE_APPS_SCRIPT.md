@@ -210,6 +210,8 @@ function recordMerma_(payload) {
   }
 
   const sheet = getMainSheet_();
+  const sheetValues = sheet.getDataRange().getValues();
+  const usedRows = new Set();
   const summary = { processed: 0, updated: 0, appended: 0 };
   items.forEach((item) => {
     const qty = Number(item.cantidadMerma) || 0;
@@ -217,12 +219,16 @@ function recordMerma_(payload) {
       throw new Error(`La merma debe ser mayor a cero (${item.productCode || 'sin código'}).`);
     }
 
-    const rowIndex = findRowIndex_(sheet, payload.fecha, payload.sede, item.productCode);
-    if (!rowIndex) {
+    // Ubica la siguiente fila sin merma para ese producto/fecha/sede antes de crear una nueva.
+    const lookup = findMermaRowIndex_(sheetValues, payload.fecha, payload.sede, item, usedRows);
+    if (!lookup.rowIndex) {
       appendMermaSinSolicitud_(sheet, payload, item, qty);
       summary.appended += 1;
     } else {
+      const rowIndex = lookup.rowIndex;
+      usedRows.add(rowIndex);
       sheet.getRange(rowIndex, CONFIG.columns.merma).setValue(qty);
+      sheetValues[rowIndex - 1][CONFIG.columns.merma - 1] = qty;
       summary.updated += 1;
     }
 
@@ -284,6 +290,44 @@ function findEntregaRowIndex_(values, dateValue, sede, item, usedRows) {
 
   if (matches.length) {
     return { rowIndex: null, status: 'already-delivered' };
+  }
+
+  return { rowIndex: null, status: 'not-found' };
+}
+
+function findMermaRowIndex_(values, dateValue, sede, item, usedRows) {
+  const targetDate = normalizeDate_(dateValue);
+  const targetSede = normalizeText_(sede);
+  const targetCode = normalizeText_(item.productCode);
+  if (!targetCode || !targetDate || !targetSede) {
+    return { rowIndex: null, status: 'not-found' };
+  }
+
+  const matches = [];
+  for (let i = 1; i < values.length; i += 1) {
+    const row = values[i];
+    if (
+      normalizeDate_(row[CONFIG.columns.fecha - 1]) === targetDate &&
+      normalizeText_(row[CONFIG.columns.sede - 1]) === targetSede &&
+      normalizeText_(row[CONFIG.columns.codigo - 1]) === targetCode
+    ) {
+      const mermaCell = row[CONFIG.columns.merma - 1];
+      const pending = mermaCell === '' || mermaCell === null || Number(mermaCell) === 0;
+      matches.push({
+        rowIndex: i + 1,
+        pending,
+        used: Boolean(usedRows && usedRows.has(i + 1)),
+      });
+    }
+  }
+
+  const available = matches.filter((match) => match.pending && !match.used);
+  if (available.length) {
+    return { rowIndex: available[0].rowIndex, status: 'ok' };
+  }
+
+  if (matches.length) {
+    return { rowIndex: null, status: 'already-recorded' };
   }
 
   return { rowIndex: null, status: 'not-found' };
