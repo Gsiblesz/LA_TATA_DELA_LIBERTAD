@@ -408,6 +408,12 @@ table th {
   color: #8a6d1c;
 }
 
+.alert--info {
+  background: #e6f2f7;
+  border-color: #8bd0e4;
+  color: #0c5c7c;
+}
+
 .alert.hidden {
   display: none;
 }
