@@ -129,6 +129,11 @@ p {
   justify-content: space-between;
 }
 
+.hero-card__description {
+  color: #d9f2ff;
+  max-width: 540px;
+}
+
 .hero-card__cta {
   background: rgba(255, 255, 255, 0.12);
   border-radius: 18px;
