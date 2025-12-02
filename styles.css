@@ -136,6 +136,36 @@ p {
   max-width: 360px;
 }
 
+.operations-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.operations-card__columns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.5rem;
+}
+
+.operations-card__columns h4 {
+  margin: 0 0 0.4rem;
+  color: var(--brand-dark);
+}
+
+.operations-card__list {
+  margin: 0;
+  padding-left: 1.25rem;
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.operations-card__list li {
+  color: var(--text);
+}
+
 .card-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));

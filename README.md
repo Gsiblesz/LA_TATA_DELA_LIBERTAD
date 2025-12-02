@@ -1,6 +1,6 @@
 # Formularios · EL CENTRO
 
-Implementación estática (HTML/CSS/JS) para administrar los formularios de **Solicitudes de Sedes**, **Entregado a Sedes** y **Control de producción** de productos terminados conectados a la hoja de cálculo proporcionada. El proyecto replica la interfaz del formulario de inventario existente e incluye un catálogo sincronizado desde la pestaña `PRODUCTOS` del mismo Google Sheets.
+Implementación estática (HTML/CSS/JS) para administrar los formularios de **Solicitudes de Sedes**, **Entregado a Sedes** y **Merma de Producción** de productos terminados conectados a la hoja de cálculo proporcionada. El proyecto replica la interfaz del formulario de inventario existente e incluye un catálogo sincronizado desde la pestaña `PRODUCTOS` del mismo Google Sheets.
 
 ## Contenido
 
@@ -34,7 +34,7 @@ Implementación estática (HTML/CSS/JS) para administrar los formularios de **So
 
 - **Solicitudes de Sedes**: registra `Fecha, Hora, Sede, Responsable` y una lista dinámica de productos con cantidades solicitadas. Cada producto genera una fila nueva en la hoja con la columna *FAMILIA* vacía.
 - **Entregado a Sedes**: busca una fila existente por combinación `Fecha + Sede + Código de producto` y actualiza `Cantidad Entregada` y `Responsable Entrega`. Si se marca "entrega sin solicitud", se crea una fila nueva con el texto `SIN SOLICITUD` en la columna de responsable de solicitud.
-- **Control de producción**: busca la fila correspondiente (Fecha + Sede + Producto) y actualiza únicamente la columna `MERMA`. Puedes seleccionar cualquier sede disponible en el panel.
+- **Merma de Producción**: busca la fila correspondiente (Fecha + Sede + Producto) y actualiza únicamente la columna `MERMA`. Puedes seleccionar cualquier sede disponible en el panel.
 - **Catálogo**: consulta la pestaña `PRODUCTOS` del Sheets y permite filtrar por código o descripción. Los datos se guardan en `localStorage` para cargar más rápido sin conexión.
 
 ## Despliegue en Vercel
