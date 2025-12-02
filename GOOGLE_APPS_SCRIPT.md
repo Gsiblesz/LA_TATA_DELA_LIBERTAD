@@ -1,8 +1,8 @@
-# Google Apps Script · Formularios LA TATA DE LA LIBERTAD
+# Google Apps Script · Formularios EL CENTRO
 
 Sigue estos pasos para conectar los formularios con el Google Sheets mostrado en las capturas:
 
-1. Abre el Google Sheets `LA TATA DE LA LIBERTAD` y navega a **Extensiones → Apps Script**.
+1. Abre el Google Sheets `EL CENTRO` y navega a **Extensiones → Apps Script**.
 2. Elimina cualquier código existente y pega el script que encontrarás más abajo.
 3. Guarda el proyecto, asígnale un nombre (por ejemplo `formularios-latata`) y presiona **Deploy → New deployment**.
 4. Selecciona **Web app**, elige *Anyone* o *Anyone with the link* para permitir que Vercel acceda, y copia la URL pública.
@@ -15,7 +15,7 @@ Sigue estos pasos para conectar los formularios con el Google Sheets mostrado en
 ```javascript
 const CONFIG = {
   spreadsheetId: '18WPHKhmnGtoNiHuALuK8486VuJeMq8LHF0tKZArq3hs',
-  mainSheetName: 'LA TATA DE LA LIBERTAD',
+  mainSheetName: 'EL CENTRO',
   catalogSheetName: 'PRODUCTOS',
   timeZone: Session.getScriptTimeZone() || 'America/Caracas',
   columns: {
@@ -68,15 +68,15 @@ function handleAction_(action, payload) {
   switch (action) {
     case 'createsolicitud': {
       const data = createSolicitud_(payload);
-      return { data, message: 'Solicitudes registradas.' };
+      return { data, message: 'Solicitudes de Sedes registradas.' };
     }
     case 'recordentrega': {
       const data = recordEntrega_(payload);
-      return { data, message: `Registros procesados: ${data.processed}` };
+      return { data, message: `Entregado a Sedes procesado: ${data.processed}` };
     }
     case 'recordmerma': {
       const data = recordMerma_(payload);
-      return { data, message: `Mermas registradas: ${data.processed}` };
+      return { data, message: `Producción registrada: ${data.processed}` };
     }
     default:
       throw new Error('Acción POST no soportada.');

@@ -1,6 +1,6 @@
-# Formularios · LA TATA DE LA LIBERTAD
+# Formularios · EL CENTRO
 
-Implementación estática (HTML/CSS/JS) para administrar los formularios de **Solicitudes**, **Registros** y **Merma** de productos terminados conectados a la hoja de cálculo proporcionada. El proyecto replica la interfaz del formulario de inventario existente e incluye un catálogo sincronizado desde la pestaña `PRODUCTOS` del mismo Google Sheets.
+Implementación estática (HTML/CSS/JS) para administrar los formularios de **Solicitudes de Sedes**, **Entregado a Sedes** y **Control de producción** de productos terminados conectados a la hoja de cálculo proporcionada. El proyecto replica la interfaz del formulario de inventario existente e incluye un catálogo sincronizado desde la pestaña `PRODUCTOS` del mismo Google Sheets.
 
 ## Contenido
 
@@ -12,7 +12,7 @@ Implementación estática (HTML/CSS/JS) para administrar los formularios de **So
 
 ## Requisitos previos
 
-1. Google Sheets con las pestañas `LA TATA DE LA LIBERTAD` y `PRODUCTOS` (ya configuradas con las columnas mostradas en las capturas).
+1. Google Sheets con las pestañas `EL CENTRO` y `PRODUCTOS` (ya configuradas con las columnas mostradas en las capturas).
 2. Apps Script desplegado como **Web App** con acceso "Anyone" o "Anyone with the link".
 3. URL pública del Web App copiada en la constante `window.APPS_SCRIPT_URL` ubicada al final de `index.html`.
 
@@ -32,9 +32,9 @@ Implementación estática (HTML/CSS/JS) para administrar los formularios de **So
 
 ## Flujo de cada formulario
 
-- **Solicitudes**: registra `Fecha, Hora, Sede, Responsable` y una lista dinámica de productos con cantidades solicitadas. Cada producto genera una fila nueva en la hoja con la columna *FAMILIA* vacía.
-- **Registros**: busca una fila existente por combinación `Fecha + Sede + Código de producto` y actualiza `Cantidad Entregada` y `Responsable Entrega`. Si se marca "registro sin solicitud", se crea una fila nueva con el texto `SIN SOLICITUD` en la columna de responsable de solicitud.
-- **Merma (BC)**: busca la fila correspondiente (Fecha + `BC` + Producto) y actualiza únicamente la columna `MERMA`. La sede está fijada a `BC` en la interfaz.
+- **Solicitudes de Sedes**: registra `Fecha, Hora, Sede, Responsable` y una lista dinámica de productos con cantidades solicitadas. Cada producto genera una fila nueva en la hoja con la columna *FAMILIA* vacía.
+- **Entregado a Sedes**: busca una fila existente por combinación `Fecha + Sede + Código de producto` y actualiza `Cantidad Entregada` y `Responsable Entrega`. Si se marca "entrega sin solicitud", se crea una fila nueva con el texto `SIN SOLICITUD` en la columna de responsable de solicitud.
+- **Control de producción**: busca la fila correspondiente (Fecha + Sede + Producto) y actualiza únicamente la columna `MERMA`. Puedes seleccionar cualquier sede disponible en el panel.
 - **Catálogo**: consulta la pestaña `PRODUCTOS` del Sheets y permite filtrar por código o descripción. Los datos se guardan en `localStorage` para cargar más rápido sin conexión.
 
 ## Despliegue en Vercel

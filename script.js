@@ -110,7 +110,7 @@ function initSolicitudesForm() {
     }
 
     if (hasDuplicateProducts(items)) {
-      showToast('No puedes repetir un producto en la solicitud.', 'error');
+      showToast('No puedes repetir un producto en la solicitud de sede.', 'error');
       return;
     }
 
@@ -125,11 +125,11 @@ function initSolicitudesForm() {
     try {
       toggleFormLoading(form, true);
       await postData('createSolicitud', payload);
-      showToast('Solicitud registrada correctamente.', 'success');
+      showToast('Solicitud de sede registrada correctamente.', 'success');
       form.reset();
       resetSolicitudRows();
     } catch (error) {
-      showToast(error.message || 'Error al registrar la solicitud.', 'error');
+      showToast(error.message || 'Error al registrar la solicitud de sede.', 'error');
     } finally {
       toggleFormLoading(form, false);
     }
@@ -242,7 +242,7 @@ function initRegistrosForm() {
     try {
       toggleFormLoading(form, true);
       await postData('recordEntrega', payload);
-      showToast('Registros procesados.', 'success');
+      showToast('Entregado a Sedes procesado.', 'success');
       form.reset();
       resetRegistroRows();
     } catch (error) {
@@ -333,7 +333,7 @@ function initMermaForm() {
     }
 
     if (hasDuplicateProducts(items)) {
-      showToast('No repitas productos en la merma.', 'error');
+      showToast('No repitas productos en Producción.', 'error');
       return;
     }
 
@@ -348,11 +348,11 @@ function initMermaForm() {
     try {
       toggleFormLoading(form, true);
       await postData('recordMerma', payload);
-      showToast(`Mermas registradas para ${payload.sede}.`, 'success');
+      showToast(`Producción registrada para ${payload.sede}.`, 'success');
       form.reset();
       resetMermaRows();
     } catch (error) {
-      showToast(error.message || 'Error al registrar la merma.', 'error');
+      showToast(error.message || 'Error al registrar la producción.', 'error');
     } finally {
       toggleFormLoading(form, false);
     }
@@ -379,7 +379,7 @@ function addMermaRow() {
       <small class="unit-hint" data-unit-output>Unidad: --</small>
     </label>
     <label>
-      <span>Cantidad merma</span>
+      <span>Cantidad producida</span>
       <input type="number" min="0" step="1" value="1" required />
     </label>
     <div class="product-row__actions">
@@ -403,7 +403,7 @@ function resetMermaRows() {
 }
 
 function collectMermaItems() {
-  return collectItems(elements.mermaRows, 'cantidad de merma', (product, quantity) => ({
+  return collectItems(elements.mermaRows, 'cantidad producida', (product, quantity) => ({
     productCode: product.code,
     productName: product.description,
     unit: product.unit,

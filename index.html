@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Panel de Formularios | La Tata de la Libertad</title>
+    <title>Panel de Formularios | EL CENTRO</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -17,14 +17,14 @@
       <aside class="sidebar">
         <div class="brand">
           <p class="eyebrow">Panel de accesos</p>
-          <h1>Formularios<br />LA TATA DE LA LIBERTAD</h1>
-          <p class="subtitle">Gestiona solicitudes, registros y mermas.</p>
+          <h1>Formularios<br />EL CENTRO</h1>
+          <p class="subtitle">Gestiona Solicitudes de Sedes, Entregado a Sedes y Producción.</p>
         </div>
         <nav class="sidebar__nav">
-          <button class="nav-btn active" data-view-target="home">Menú LA TATA</button>
-          <button class="nav-btn" data-view-target="solicitudes">Solicitudes</button>
-          <button class="nav-btn" data-view-target="registros">Registros</button>
-          <button class="nav-btn" data-view-target="mermas">Merma BC</button>
+          <button class="nav-btn active" data-view-target="home">Menú EL CENTRO</button>
+          <button class="nav-btn" data-view-target="solicitudes">Solicitudes de Sedes</button>
+          <button class="nav-btn" data-view-target="registros">Entregado a Sedes</button>
+          <button class="nav-btn" data-view-target="mermas">Control de producción</button>
           <button class="nav-btn" data-view-target="catalogo">Catálogo de productos</button>
         </nav>
         <footer class="sidebar__footer">
@@ -45,9 +45,9 @@
           <article class="hero-card">
             <div>
               <p class="eyebrow">Panel de accesos</p>
-              <h2>Bienvenido al menú de solicitudes y registros de LA TATA DE LA LIBERTAD</h2>
+              <h2>Bienvenido al menú de solicitudes y entregas de EL CENTRO</h2>
               <p>
-                Desde aquí podrás registrar solicitudes de productos terminados, confirmar entregas y documentar mermas.
+                Desde aquí podrás registrar Solicitudes de Sedes, confirmar Entregado a Sedes y documentar Producción.
                 Todos los formularios se conectan a la misma hoja de Google Sheets.
               </p>
             </div>
@@ -65,22 +65,22 @@
 
           <div class="card-grid">
             <article class="action-card">
-              <p class="eyebrow">Solicitudes</p>
-              <h3>Registrar nueva solicitud</h3>
+              <p class="eyebrow">Solicitudes de Sedes</p>
+              <h3>Registrar nueva solicitud de sede</h3>
               <p>Captura fecha, hora, sede y los productos que requiere cada centro.</p>
-              <button class="btn btn--ghost" data-view-target="solicitudes">Ir a Solicitudes</button>
+              <button class="btn btn--ghost" data-view-target="solicitudes">Ir a Solicitudes de Sedes</button>
             </article>
             <article class="action-card">
-              <p class="eyebrow">Registros</p>
-              <h3>Confirmar entregas</h3>
+              <p class="eyebrow">Entregado a Sedes</p>
+              <h3>Confirmar entregas a sedes</h3>
               <p>Actualiza cantidades entregadas y responsables, incluso sin una solicitud previa.</p>
-              <button class="btn btn--ghost" data-view-target="registros">Ir a Registros</button>
+              <button class="btn btn--ghost" data-view-target="registros">Ir a Entregado a Sedes</button>
             </article>
             <article class="action-card">
-              <p class="eyebrow">Merma</p>
-              <h3>Control de merma BC</h3>
-              <p>Documenta las mermas de la sede BC para mantener el historial actualizado.</p>
-              <button class="btn btn--ghost" data-view-target="mermas">Ir a Merma</button>
+              <p class="eyebrow">Producción</p>
+              <h3>Control de producción</h3>
+              <p>Registra la producción de cada sede para mantener el historial actualizado.</p>
+              <button class="btn btn--ghost" data-view-target="mermas">Ir a Producción</button>
             </article>
           </div>
         </section>
@@ -89,7 +89,7 @@
           <header class="view__header">
             <div>
               <p class="eyebrow">Formularios</p>
-              <h2>LA TATA DE LA LIBERTAD · Solicitudes</h2>
+              <h2>EL CENTRO · Solicitudes de Sedes</h2>
             </div>
             <button class="btn btn--ghost" data-view-target="catalogo">Ver catálogo</button>
           </header>
@@ -137,9 +137,9 @@
           <header class="view__header">
             <div>
               <p class="eyebrow">Formularios</p>
-              <h2>LA TATA DE LA LIBERTAD · Registros</h2>
+              <h2>EL CENTRO · Entregado a Sedes</h2>
             </div>
-            <button class="btn btn--ghost" data-view-target="solicitudes">Ver solicitudes</button>
+            <button class="btn btn--ghost" data-view-target="solicitudes">Ver Solicitudes de Sedes</button>
           </header>
 
           <form id="registros-form" class="card">
@@ -184,7 +184,7 @@
             </section>
 
             <div class="form-actions">
-              <button type="submit" class="btn">Actualizar registro</button>
+              <button type="submit" class="btn">Actualizar Entregado a Sedes</button>
             </div>
           </form>
         </section>
@@ -193,7 +193,7 @@
           <header class="view__header">
             <div>
               <p class="eyebrow">Formularios</p>
-              <h2>LA TATA DE LA LIBERTAD · Merma BC</h2>
+              <h2>EL CENTRO · Control de producción</h2>
             </div>
             <button class="btn btn--ghost" data-view-target="catalogo">Ver catálogo</button>
           </header>
@@ -210,10 +210,7 @@
               </label>
               <label>
                 <span>Sede</span>
-                <select name="sede" required>
-                  <option value="BC">BC</option>
-                  <option value="LPG">LPG</option>
-                </select>
+                <select name="sede" data-role="sede-select" required></select>
               </label>
               <label>
                 <span>Responsable</span>
@@ -225,7 +222,7 @@
               <div class="products-box__header">
                 <div>
                   <h3>Productos involucrados</h3>
-                  <p>Selecciona los productos que generaron merma en BC.</p>
+                  <p>Selecciona los productos producidos en la sede seleccionada.</p>
                 </div>
               </div>
               <div id="merma-product-rows" class="product-rows"></div>
@@ -235,7 +232,7 @@
             </section>
 
             <div class="form-actions">
-              <button type="submit" class="btn">Registrar merma</button>
+              <button type="submit" class="btn">Registrar Producción</button>
             </div>
           </form>
         </section>
@@ -280,7 +277,7 @@
     <datalist id="product-options"></datalist>
 
     <script>
-      window.APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzlb43sgojj5bjA0BJ-bGtD4NRCs9yKMvphlRH3ra92s78Y8itWp35WmtTzw8WAJv5lgQ/exec';
+      window.APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyuog_HlM-BsnsS_xqk9rx8t4ysxtPyxJ1g_lkn_d5Swcq7zBHot9e5qU4t1AN-UM9sCA/exec';
     </script>
     <script src="script.js" defer></script>
   </body>
