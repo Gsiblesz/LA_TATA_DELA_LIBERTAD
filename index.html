@@ -70,18 +70,26 @@
             </div>
             <div class="operations-card__columns">
               <div>
-                <h4>Producto fresco</h4>
-                <ul class="operations-card__list">
-                  <li>Se puede solicitar todos los días hasta las 3:00&nbsp;pm.</li>
-                  <li>La producción y el despacho se realizan al día siguiente.</li>
-                </ul>
+                <p>
+                  Buenos días, vamos a realizar la solicitud de producto fresco y empaquetado desde las sedes a la Tata de
+                  la Libertad y Panificadora con este formulario. Esta semana estaremos probando el flujo para ajustarnos al
+                  proceso y definir procedimientos que funcionen para todos. Agradecemos el máximo apoyo; cuando las pruebas
+                  finalicen compartiremos el instructivo formal.
+                </p>
+                <p class="muted">Ante cualquier duda quedo a la orden. ¡Gracias!</p>
               </div>
               <div>
-                <h4>Empaquetado y congelado</h4>
+                <h4>Producto fresco</h4>
                 <ul class="operations-card__list">
-                  <li>Solicitudes los lunes, miércoles y viernes (hasta las 3:00&nbsp;pm).</li>
-                  <li>Producción programada los martes, jueves y sábado.</li>
-                  <li>Despachos los miércoles, viernes y domingo.</li>
+                  <li>Solicitud diaria antes de las 3:00&nbsp;pm.</li>
+                  <li>Fecha: producción y entrega.</li>
+                  <li>Hora: 7:30&nbsp;am, 9:00&nbsp;am o 13:00&nbsp;(1:00&nbsp;pm) según el despacho requerido.</li>
+                </ul>
+                <h4>Producto empaquetado</h4>
+                <ul class="operations-card__list">
+                  <li>Realizar pedidos lunes, miércoles y viernes antes de las 3:00&nbsp;pm.</li>
+                  <li>Fecha: de producción.</li>
+                  <li>Hora permitida: 13:00&nbsp;(1:00&nbsp;pm).</li>
                 </ul>
               </div>
             </div>
@@ -126,7 +134,12 @@
               </label>
               <label>
                 <span>Hora</span>
-                <input type="time" name="hora" required />
+                <select name="hora" required>
+                  <option value="" disabled selected>Selecciona un horario</option>
+                  <option value="07:30">07:30 am</option>
+                  <option value="09:00">09:00 am</option>
+                  <option value="13:00">13:00 (1:00 pm)</option>
+                </select>
               </label>
               <label>
                 <span>Sede</span>
@@ -174,7 +187,12 @@
               </label>
               <label>
                 <span>Hora</span>
-                <input type="time" name="hora" required />
+                <select name="hora" required>
+                  <option value="" disabled selected>Selecciona un horario</option>
+                  <option value="07:30">07:30 am</option>
+                  <option value="09:00">09:00 am</option>
+                  <option value="13:00">13:00 (1:00 pm)</option>
+                </select>
               </label>
               <label>
                 <span>Sede</span>

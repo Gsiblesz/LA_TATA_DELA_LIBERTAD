@@ -1,7 +1,7 @@
 'use strict';
 
 const APPS_SCRIPT_URL = (window.APPS_SCRIPT_URL || '').trim();
-const SEDES = ['SL', 'LPG', 'SC', 'SCH', 'PB-2', 'E PB-2', 'LG', 'VM', 'BC'];
+const SEDES = ['SL', 'LPG', 'SC', 'SCH', 'PB-2', 'E PB-2', 'LG', 'VM', 'BC', 'LA GUAIRA'];
 const STORAGE_KEY = 'latata-catalog-v1';
 
 const state = {
