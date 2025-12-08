@@ -84,27 +84,58 @@ function handleAction_(action, payload) {
 }
 
 function createSolicitud_(payload) {
+  validateRequired_(payload, ['hora', 'fecha', 'sede', 'responsable']);
   const items = Array.isArray(payload.items) ? payload.items : [];
   if (!items.length) throw new Error('Debes enviar al menos un producto.');
 
+  const sanitizedItems = sanitizeSolicitudItems_(items);
   const sheet = getMainSheet_();
-  const rows = items.map((item) => [
-    payload.hora || '',
-    payload.fecha || '',
+  const rows = sanitizedItems.map((item) => [
+    payload.hora,
+    payload.fecha,
     '',
-    item.code || '',
-    item.unit || '',
-    item.description || '',
-    payload.sede || '',
-    Number(item.quantity) || 0,
-    payload.responsable || '',
+    item.code,
+    item.unit,
+    item.description,
+    payload.sede,
+    item.quantity,
+    payload.responsable,
     '',
     '',
-     '', // Placeholder for ventaXetux column
+    '', // Placeholder for ventaXetux column
   ]);
 
   sheet.getRange(sheet.getLastRow() + 1, 1, rows.length, rows[0].length).setValues(rows);
   return { rowsInserted: rows.length };
+}
+
+// Garantiza que cada producto tenga datos mínimos antes de insertar filas.
+function sanitizeSolicitudItems_(items) {
+  return items.map((item, index) => {
+    const code = String(item.code || '').trim();
+    const description = String(item.description || '').trim();
+    const unit = String(item.unit || '').trim();
+    const quantity = Number(item.quantity);
+    const label = code || description || `#${index + 1}`;
+
+    if (!code) {
+      throw new Error(`El producto ${label} necesita un código.`);
+    }
+
+    if (!description) {
+      throw new Error(`El producto ${label} necesita una descripción.`);
+    }
+
+    if (!unit) {
+      throw new Error(`La unidad del producto ${label} es obligatoria.`);
+    }
+
+    if (!Number.isFinite(quantity) || quantity <= 0) {
+      throw new Error(`La cantidad solicitada de ${label} debe ser mayor a cero.`);
+    }
+
+    return { code, description, unit, quantity };
+  });
 }
 
 function recordEntrega_(payload) {
@@ -392,7 +423,16 @@ function getSafeLock_() {
 
 function validateRequired_(payload, fields) {
   fields.forEach((field) => {
-    if (!payload[field]) {
+    const value = payload[field];
+    const isString = typeof value === 'string';
+    const normalized = isString ? value.trim() : value;
+    if (isString) {
+      payload[field] = normalized;
+    }
+    if (normalized === undefined || normalized === null) {
+      throw new Error(`El campo ${field} es obligatorio.`);
+    }
+    if (typeof normalized === 'string' && normalized === '') {
       throw new Error(`El campo ${field} es obligatorio.`);
     }
   });
