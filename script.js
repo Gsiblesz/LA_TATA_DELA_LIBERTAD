@@ -2,6 +2,7 @@
 
 const APPS_SCRIPT_URL = (window.APPS_SCRIPT_URL || '').trim();
 const SEDES = ['SL', 'LPG', 'SC', 'SCH', 'PB-2', 'E PB-2', 'LG', 'VM', 'BC', 'LA GUAIRA'];
+const MERMA_SEDES = ['BC', 'LPG'];
 const STORAGE_KEY = 'latata-catalog-v1';
 
 const state = {
@@ -71,12 +72,15 @@ function showView(target) {
 function populateSedeSelects() {
   document.querySelectorAll('[data-role="sede-select"]').forEach((select) => {
     const currentValue = select.value;
+    const scope = String(select.dataset.scope || '').toLowerCase();
+    const isMermaField = scope === 'merma' || Boolean(select.closest('[data-view="mermas"]'));
+    const availableSedes = isMermaField ? MERMA_SEDES : SEDES;
     const options = [
       '<option value="" disabled selected>Selecciona una sede</option>',
-      ...SEDES.map((sede) => `<option value="${sede}">${sede}</option>`),
+      ...availableSedes.map((sede) => `<option value="${sede}">${sede}</option>`),
     ].join('');
     select.innerHTML = options;
-    if (currentValue && SEDES.includes(currentValue)) {
+    if (currentValue && availableSedes.includes(currentValue)) {
       select.value = currentValue;
     }
   });
@@ -340,7 +344,7 @@ function initMermaForm() {
     const payload = {
       fecha: formData.get('fecha') || '',
       hora: formData.get('hora') || '',
-      sede: formData.get('sede') || 'BC',
+      sede: formData.get('sede') || MERMA_SEDES[0],
       responsable: formData.get('responsable') || '',
       items,
     };
