@@ -30,8 +30,8 @@ const CONFIG = {
     responsableSolicitud: 9,
     cantidadEntregada: 10,
     responsableEntrega: 11,
-    ventaXetux: 12,
-    merma: 13,
+    merma: 12,
+    mes: 13,
   },
 };
 
@@ -102,7 +102,8 @@ function createSolicitud_(payload) {
     payload.responsable,
     '',
     '',
-    '', // Placeholder for ventaXetux column
+    '',
+    '',
   ]);
 
   sheet.getRange(sheet.getLastRow() + 1, 1, rows.length, rows[0].length).setValues(rows);
@@ -226,8 +227,8 @@ function appendMermaSinSolicitud_(sheet, payload, item, qty) {
     'SIN SOLICITUD',
     '',
     '',
-    '',
     qty,
+    '',
   ];
   sheet.appendRow(row);
   return sheet.getLastRow();
