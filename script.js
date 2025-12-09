@@ -73,8 +73,7 @@ function populateSedeSelects() {
   document.querySelectorAll('[data-role="sede-select"]').forEach((select) => {
     const currentValue = select.value;
     const scope = String(select.dataset.scope || '').toLowerCase();
-    const isMermaField = scope === 'merma' || Boolean(select.closest('[data-view="mermas"]'));
-    const availableSedes = isMermaField ? MERMA_SEDES : SEDES;
+    const availableSedes = scope === 'merma' ? MERMA_SEDES : SEDES;
     const options = [
       '<option value="" disabled selected>Selecciona una sede</option>',
       ...availableSedes.map((sede) => `<option value="${sede}">${sede}</option>`),
