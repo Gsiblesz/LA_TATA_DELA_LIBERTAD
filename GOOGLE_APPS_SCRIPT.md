@@ -32,6 +32,7 @@ const CONFIG = {
     responsableEntrega: 11,
     merma: 12,
     mes: 13,
+    timestamp: 14,
   },
 };
 
@@ -88,6 +89,8 @@ function createSolicitud_(payload) {
   const items = Array.isArray(payload.items) ? payload.items : [];
   if (!items.length) throw new Error('Debes enviar al menos un producto.');
 
+  const registroAutomatico = new Date();
+
   const sanitizedItems = sanitizeSolicitudItems_(items);
   const sheet = getMainSheet_();
   const rows = sanitizedItems.map((item) => [
@@ -104,6 +107,7 @@ function createSolicitud_(payload) {
     '',
     '',
     '',
+    registroAutomatico,
   ]);
 
   sheet.getRange(sheet.getLastRow() + 1, 1, rows.length, rows[0].length).setValues(rows);
@@ -209,6 +213,7 @@ function appendEntregaSinSolicitud_(sheet, payload, item, qty) {
     payload.responsableEntrega || '',
     '',
     '',
+    new Date(),
   ];
   sheet.appendRow(row);
   return sheet.getLastRow();
@@ -229,6 +234,7 @@ function appendMermaSinSolicitud_(sheet, payload, item, qty) {
     '',
     qty,
     '',
+    new Date(),
   ];
   sheet.appendRow(row);
   return sheet.getLastRow();
