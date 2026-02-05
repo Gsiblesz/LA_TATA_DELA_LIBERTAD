@@ -151,8 +151,6 @@ function recordEntrega_(payload) {
   }
 
   const sheet = getMainSheet_();
-  const sheetValues = sheet.getDataRange().getValues();
-  const usedRows = new Set();
   const summary = { processed: 0, updated: 0, appended: 0 };
 
   items.forEach((item) => {
@@ -163,39 +161,36 @@ function recordEntrega_(payload) {
 
     if (payload.sinSolicitud) {
       appendEntregaSinSolicitud_(sheet, payload, item, qty);
-      summary.appended += 1;
     } else {
-      const lookup = findEntregaRowIndex_(sheetValues, payload.fecha, payload.sede, item, usedRows);
-      if (!lookup.rowIndex) {
-        const codeLabel = item.productCode || item.productName || 'sin código';
-        if (lookup.status === 'already-delivered') {
-          throw new Error(
-            `El producto ${codeLabel} ya tiene una entrega registrada para esa fecha y sede.`
-          );
-        }
-        throw new Error(
-          `No se encontró una solicitud con esa fecha, sede y producto (${codeLabel}).`
-        );
-      }
-
-      const rowIndex = lookup.rowIndex;
-      usedRows.add(rowIndex);
-
-      if (payload.hora) {
-        sheet.getRange(rowIndex, CONFIG.columns.hora).setValue(payload.hora);
-        sheetValues[rowIndex - 1][CONFIG.columns.hora - 1] = payload.hora;
-      }
-      sheet.getRange(rowIndex, CONFIG.columns.cantidadEntregada).setValue(qty);
-      sheet.getRange(rowIndex, CONFIG.columns.responsableEntrega).setValue(payload.responsableEntrega || '');
-      sheetValues[rowIndex - 1][CONFIG.columns.cantidadEntregada - 1] = qty;
-      sheetValues[rowIndex - 1][CONFIG.columns.responsableEntrega - 1] = payload.responsableEntrega || '';
-      summary.updated += 1;
+      appendEntregaDirecta_(sheet, payload, item, qty);
     }
 
+    summary.appended += 1;
     summary.processed += 1;
   });
 
   return summary;
+}
+
+function appendEntregaDirecta_(sheet, payload, item, qty) {
+  const row = [
+    payload.hora || '',
+    payload.fecha || '',
+    '',
+    item.productCode || '',
+    item.unit || '',
+    item.productName || '',
+    payload.sede || '',
+    '',
+    '',
+    qty,
+    payload.responsableEntrega || '',
+    '',
+    '',
+    new Date(),
+  ];
+  sheet.appendRow(row);
+  return sheet.getLastRow();
 }
 
 function appendEntregaSinSolicitud_(sheet, payload, item, qty) {
@@ -248,8 +243,6 @@ function recordMerma_(payload) {
   }
 
   const sheet = getMainSheet_();
-  const sheetValues = sheet.getDataRange().getValues();
-  const usedRows = new Set();
   const summary = { processed: 0, updated: 0, appended: 0 };
   items.forEach((item) => {
     const qty = Number(item.cantidadMerma) || 0;
@@ -257,23 +250,33 @@ function recordMerma_(payload) {
       throw new Error(`La merma debe ser mayor a cero (${item.productCode || 'sin código'}).`);
     }
 
-    // Ubica la siguiente fila sin merma para ese producto/fecha/sede antes de crear una nueva.
-    const lookup = findMermaRowIndex_(sheetValues, payload.fecha, payload.sede, item, usedRows);
-    if (!lookup.rowIndex) {
-      appendMermaSinSolicitud_(sheet, payload, item, qty);
-      summary.appended += 1;
-    } else {
-      const rowIndex = lookup.rowIndex;
-      usedRows.add(rowIndex);
-      sheet.getRange(rowIndex, CONFIG.columns.merma).setValue(qty);
-      sheetValues[rowIndex - 1][CONFIG.columns.merma - 1] = qty;
-      summary.updated += 1;
-    }
-
+    appendMermaDirecta_(sheet, payload, item, qty);
+    summary.appended += 1;
     summary.processed += 1;
   });
 
   return summary;
+}
+
+function appendMermaDirecta_(sheet, payload, item, qty) {
+  const row = [
+    payload.hora || '',
+    payload.fecha || '',
+    '',
+    item.productCode || '',
+    item.unit || '',
+    item.productName || '',
+    payload.sede || '',
+    '',
+    'SIN SOLICITUD',
+    '',
+    '',
+    qty,
+    '',
+    new Date(),
+  ];
+  sheet.appendRow(row);
+  return sheet.getLastRow();
 }
 
 function getProducts_() {
@@ -288,105 +291,6 @@ function getProducts_() {
       description: String(row[1]).trim(),
       unit: String(row[2] || '').trim() || 'UND',
     }));
-}
-
-function findEntregaRowIndex_(values, dateValue, sede, item, usedRows) {
-  const targetDate = normalizeDate_(dateValue);
-  const targetSede = normalizeText_(sede);
-  const targetCode = normalizeText_(item.productCode);
-  const qty = Number(item.cantidadEntregada) || 0;
-  if (!targetCode || !targetDate || !targetSede) {
-    return { rowIndex: null, status: 'not-found' };
-  }
-
-  const matches = [];
-  for (let i = 1; i < values.length; i += 1) {
-    const row = values[i];
-    if (
-      normalizeDate_(row[CONFIG.columns.fecha - 1]) === targetDate &&
-      normalizeText_(row[CONFIG.columns.sede - 1]) === targetSede &&
-      normalizeText_(row[CONFIG.columns.codigo - 1]) === targetCode
-    ) {
-      const deliveredCell = row[CONFIG.columns.cantidadEntregada - 1];
-      const requestedCell = row[CONFIG.columns.cantidadSolicitada - 1];
-      const pending = deliveredCell === '' || deliveredCell === null || Number(deliveredCell) === 0;
-      const requestedQty = requestedCell === '' || requestedCell === null ? null : Number(requestedCell);
-      matches.push({
-        rowIndex: i + 1,
-        pending,
-        qtyMatches: requestedQty !== null && requestedQty === qty,
-        used: Boolean(usedRows && usedRows.has(i + 1)),
-      });
-    }
-  }
-
-  const available = matches.filter((match) => match.pending && !match.used);
-  if (available.length) {
-    const best = available.find((match) => match.qtyMatches) || available[0];
-    return { rowIndex: best.rowIndex, status: 'ok' };
-  }
-
-  if (matches.length) {
-    return { rowIndex: null, status: 'already-delivered' };
-  }
-
-  return { rowIndex: null, status: 'not-found' };
-}
-
-function findMermaRowIndex_(values, dateValue, sede, item, usedRows) {
-  const targetDate = normalizeDate_(dateValue);
-  const targetSede = normalizeText_(sede);
-  const targetCode = normalizeText_(item.productCode);
-  if (!targetCode || !targetDate || !targetSede) {
-    return { rowIndex: null, status: 'not-found' };
-  }
-
-  const matches = [];
-  for (let i = 1; i < values.length; i += 1) {
-    const row = values[i];
-    if (
-      normalizeDate_(row[CONFIG.columns.fecha - 1]) === targetDate &&
-      normalizeText_(row[CONFIG.columns.sede - 1]) === targetSede &&
-      normalizeText_(row[CONFIG.columns.codigo - 1]) === targetCode
-    ) {
-      const mermaCell = row[CONFIG.columns.merma - 1];
-      const pending = mermaCell === '' || mermaCell === null || Number(mermaCell) === 0;
-      matches.push({
-        rowIndex: i + 1,
-        pending,
-        used: Boolean(usedRows && usedRows.has(i + 1)),
-      });
-    }
-  }
-
-  const available = matches.filter((match) => match.pending && !match.used);
-  if (available.length) {
-    return { rowIndex: available[0].rowIndex, status: 'ok' };
-  }
-
-  if (matches.length) {
-    return { rowIndex: null, status: 'already-recorded' };
-  }
-
-  return { rowIndex: null, status: 'not-found' };
-}
-
-function findRowIndex_(sheet, dateValue, sede, productCode) {
-  const values = sheet.getDataRange().getValues();
-  const targetDate = normalizeDate_(dateValue);
-  const targetSede = normalizeText_(sede);
-  const targetCode = normalizeText_(productCode);
-
-  for (let i = 1; i < values.length; i += 1) {
-    const row = values[i];
-    const rowDate = normalizeDate_(row[CONFIG.columns.fecha - 1]);
-    const rowSede = normalizeText_(row[CONFIG.columns.sede - 1]);
-    const rowCode = normalizeText_(row[CONFIG.columns.codigo - 1]);
-    if (rowDate === targetDate && rowSede === targetSede && rowCode === targetCode) {
-      return i + 1; // +1 porque getValues inicia en 0 y las filas en 1
-    }
-  }
-  return null;
 }
 
 function parseBody_(e) {
