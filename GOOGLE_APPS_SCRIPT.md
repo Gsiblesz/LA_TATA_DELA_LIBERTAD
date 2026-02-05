@@ -15,7 +15,7 @@ Sigue estos pasos para conectar los formularios con el Google Sheets mostrado en
 ```javascript
 const CONFIG = {
   spreadsheetId: '18WPHKhmnGtoNiHuALuK8486VuJeMq8LHF0tKZArq3hs',
-  mainSheetName: 'EL CENTRO',
+  mainSheetName: 'DATA',
   catalogSheetName: 'PRODUCTOS',
   timeZone: Session.getScriptTimeZone() || 'America/Caracas',
   columns: {
