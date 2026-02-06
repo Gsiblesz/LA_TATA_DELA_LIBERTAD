@@ -3,6 +3,8 @@
 const APPS_SCRIPT_URL = (window.APPS_SCRIPT_URL || '').trim();
 const SEDES = ['SL', 'LPG', 'SC', 'SCH', 'PB-2', 'E PB-2', 'LG', 'VM', 'BC', 'LA GUAIRA'];
 const MERMA_SEDES = ['BC', 'LPG'];
+const FORCED_HORA_SEDES = ['BC', 'PB-2', 'VM'];
+const FORCED_HORA_VALUE = '09:00';
 const STORAGE_KEY = 'latata-catalog-v1';
 
 const state = {
@@ -41,6 +43,7 @@ init();
 function init() {
   setupNavigation();
   populateSedeSelects();
+  setupHoraAutoForSedes();
   initSolicitudesForm();
   initRegistrosForm();
   initMermaForm();
@@ -85,6 +88,48 @@ function populateSedeSelects() {
   });
 }
 
+function isForcedHoraSede(sede) {
+  return FORCED_HORA_SEDES.includes(String(sede || '').trim());
+}
+
+function setupHoraAutoForSedes() {
+  document.querySelectorAll('[data-role="sede-select"]').forEach((select) => {
+    if (select.dataset.horaBound === 'true') return;
+    const form = select.closest('form');
+    const horaField = form?.querySelector('[name="hora"]');
+    if (!horaField) return;
+
+    const applyHoraRule = () => {
+      const sede = select.value;
+      if (isForcedHoraSede(sede)) {
+        horaField.value = FORCED_HORA_VALUE;
+        horaField.dataset.locked = 'true';
+      } else {
+        if (horaField.dataset.locked === 'true' && horaField.value === FORCED_HORA_VALUE) {
+          horaField.value = '';
+        }
+        delete horaField.dataset.locked;
+      }
+    };
+
+    select.addEventListener('change', applyHoraRule);
+    horaField.addEventListener('change', () => {
+      if (horaField.dataset.locked === 'true' && horaField.value !== FORCED_HORA_VALUE) {
+        horaField.value = FORCED_HORA_VALUE;
+        showToast('Para esta sede la hora es 09:00.', 'info');
+      }
+    });
+    horaField.addEventListener('input', () => {
+      if (horaField.dataset.locked === 'true' && horaField.value !== FORCED_HORA_VALUE) {
+        horaField.value = FORCED_HORA_VALUE;
+      }
+    });
+
+    applyHoraRule();
+    select.dataset.horaBound = 'true';
+  });
+}
+
 function initSolicitudesForm() {
   const form = document.getElementById('solicitudes-form');
   if (!form || !elements.solicitudRows) return;
@@ -117,10 +162,11 @@ function initSolicitudesForm() {
       return;
     }
 
+    const sede = formData.get('sede') || '';
     const payload = {
       fecha: formData.get('fecha') || '',
-      hora: formData.get('hora') || '',
-      sede: formData.get('sede') || '',
+      hora: isForcedHoraSede(sede) ? FORCED_HORA_VALUE : formData.get('hora') || '',
+      sede,
       responsable: formData.get('responsable') || '',
       items,
     };
@@ -233,10 +279,11 @@ function initRegistrosForm() {
       return;
     }
 
+    const sede = formData.get('sede') || '';
     const payload = {
       fecha: formData.get('fecha') || '',
-      hora: formData.get('hora') || '',
-      sede: formData.get('sede') || '',
+      hora: isForcedHoraSede(sede) ? FORCED_HORA_VALUE : formData.get('hora') || '',
+      sede,
       responsableEntrega: formData.get('responsableEntrega') || '',
       sinSolicitud: formData.get('sinSolicitud') === 'on',
       items,
@@ -340,10 +387,11 @@ function initMermaForm() {
       return;
     }
 
+    const sede = formData.get('sede') || MERMA_SEDES[0];
     const payload = {
       fecha: formData.get('fecha') || '',
-      hora: formData.get('hora') || '',
-      sede: formData.get('sede') || MERMA_SEDES[0],
+      hora: isForcedHoraSede(sede) ? FORCED_HORA_VALUE : formData.get('hora') || '',
+      sede,
       responsable: formData.get('responsable') || '',
       items,
     };
