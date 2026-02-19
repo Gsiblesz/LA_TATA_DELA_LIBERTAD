@@ -700,7 +700,7 @@ async function fetchProducts(showToastOnSuccess = false) {
 
   try {
     const response = await fetch(`${APPS_SCRIPT_URL}?action=getProducts`, { cache: 'no-store' });
-    const data = await response.json();
+    const data = await readResponseData(response);
     if (!data.success) {
       throw new Error(data.message || 'No se pudo sincronizar el catálogo.');
     }
@@ -754,11 +754,29 @@ async function postData(action, payload) {
     body: JSON.stringify({ action, payload }),
   });
 
-  const data = await response.json();
+  const data = await readResponseData(response);
   if (!data.success) {
     throw new Error(data.message || 'Error en la operación.');
   }
   return data;
+}
+
+async function readResponseData(response) {
+  const raw = await response.text();
+  const text = raw.trim();
+
+  if (!text) {
+    return { success: response.ok };
+  }
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    if (/^ok$/i.test(text)) {
+      return { success: response.ok, message: text };
+    }
+    throw new Error(text);
+  }
 }
 
 function toggleFormLoading(form, loading) {
