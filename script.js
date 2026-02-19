@@ -705,7 +705,13 @@ async function fetchProducts(showToastOnSuccess = false) {
       throw new Error(data.message || 'No se pudo sincronizar el catálogo.');
     }
 
-    state.products = data?.data?.products || [];
+    if (!Array.isArray(data?.data?.products)) {
+      throw new Error(
+        'El Apps Script no devolvió el catálogo. Implementa la acción getProducts y retorna JSON.'
+      );
+    }
+
+    state.products = data.data.products;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state.products));
     refreshProductCombos();
     renderCatalog(state.products);
