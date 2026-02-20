@@ -28,7 +28,16 @@ const elements = {
   toast: document.getElementById('toast'),
   envWarning: document.getElementById('env-warning'),
   productOptions: document.getElementById('product-options'),
+  confirmModal: document.getElementById('confirm-modal'),
+  confirmSummary: document.getElementById('confirm-summary'),
+  confirmAccept: document.getElementById('confirm-accept'),
+  confirmAcceptText: document.getElementById('confirm-accept-text'),
+  confirmSubmitBtn: document.getElementById('confirm-submit-btn'),
+  confirmTitle: document.getElementById('confirm-title'),
+  confirmCloseTriggers: () => document.querySelectorAll('[data-close-confirm]'),
 };
+
+let confirmResolver = null;
 
 const queryAll = (scope, selector) => {
   if (!scope) return [];
@@ -50,10 +59,30 @@ function init() {
   setupProductCombos();
   syncProductCombosState();
   setupSingleProductHintButtons();
+  setupConfirmModalEvents();
   initCatalogView();
   loadCatalogFromCache();
   fetchProducts();
   toggleEnvWarning(!APPS_SCRIPT_URL);
+}
+
+function setupConfirmModalEvents() {
+  elements.confirmCloseTriggers().forEach((trigger) => {
+    trigger.addEventListener('click', () => closeConfirmationModal(false));
+  });
+
+  elements.confirmSubmitBtn?.addEventListener('click', () => closeConfirmationModal(true));
+
+  elements.confirmAccept?.addEventListener('change', () => {
+    if (!elements.confirmSubmitBtn || !elements.confirmAccept) return;
+    elements.confirmSubmitBtn.disabled = !elements.confirmAccept.checked;
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && !elements.confirmModal?.classList.contains('hidden')) {
+      closeConfirmationModal(false);
+    }
+  });
 }
 
 function setupNavigation() {
@@ -170,6 +199,29 @@ function initSolicitudesForm() {
       responsable: formData.get('responsable') || '',
       items,
     };
+
+    const confirmed = await requestTwoStepConfirmation({
+      title: 'Confirmar solicitud de sede',
+      agreementName: payload.responsable,
+      fields: [
+        { label: 'Fecha', value: payload.fecha },
+        { label: 'Hora', value: payload.hora },
+        { label: 'Sede', value: payload.sede },
+        { label: 'Responsable', value: payload.responsable },
+      ],
+      items: payload.items.map((item) => ({
+        code: item.code,
+        description: item.description,
+        unit: item.unit,
+        quantity: item.quantity,
+      })),
+      quantityLabel: 'Cantidad solicitada',
+    });
+
+    if (!confirmed) {
+      showToast('Envío cancelado. Puedes revisar y editar la solicitud.', 'info');
+      return;
+    }
 
     try {
       toggleFormLoading(form, true);
@@ -288,6 +340,30 @@ function initRegistrosForm() {
       sinSolicitud: formData.get('sinSolicitud') === 'on',
       items,
     };
+
+    const confirmed = await requestTwoStepConfirmation({
+      title: 'Confirmar entrega a sede',
+      agreementName: payload.responsableEntrega,
+      fields: [
+        { label: 'Fecha', value: payload.fecha },
+        { label: 'Hora', value: payload.hora },
+        { label: 'Sede', value: payload.sede },
+        { label: 'Responsable entrega', value: payload.responsableEntrega },
+        { label: 'Modo', value: payload.sinSolicitud ? 'Sin solicitud previa' : 'Con solicitud' },
+      ],
+      items: payload.items.map((item) => ({
+        code: item.productCode,
+        description: item.productName,
+        unit: item.unit,
+        quantity: item.cantidadEntregada,
+      })),
+      quantityLabel: 'Cantidad entregada',
+    });
+
+    if (!confirmed) {
+      showToast('Envío cancelado. Puedes revisar y editar la entrega.', 'info');
+      return;
+    }
 
     try {
       toggleFormLoading(form, true);
@@ -812,4 +888,101 @@ function showToast(message, type = 'info') {
   toastTimeout = setTimeout(() => {
     elements.toast.classList.remove('show');
   }, 3500);
+}
+
+function requestTwoStepConfirmation(config) {
+  if (!elements.confirmModal || !elements.confirmSummary || !elements.confirmAcceptText) {
+    return Promise.resolve(true);
+  }
+
+  const safeTitle = String(config?.title || 'Confirmar envío').trim() || 'Confirmar envío';
+  const agreementName = String(config?.agreementName || '').trim();
+  const normalizedName = agreementName || 'responsable del formulario';
+  const fields = Array.isArray(config?.fields) ? config.fields : [];
+  const items = Array.isArray(config?.items) ? config.items : [];
+  const quantityLabel = String(config?.quantityLabel || 'Cantidad').trim() || 'Cantidad';
+
+  if (elements.confirmTitle) {
+    elements.confirmTitle.textContent = safeTitle;
+  }
+
+  elements.confirmSummary.innerHTML = buildConfirmationSummary(fields, items, quantityLabel);
+  elements.confirmAcceptText.textContent = `Yo, ${normalizedName}, estoy de acuerdo con estas cantidades y productos.`;
+
+  if (elements.confirmAccept) {
+    elements.confirmAccept.checked = false;
+  }
+  if (elements.confirmSubmitBtn) {
+    elements.confirmSubmitBtn.disabled = true;
+  }
+
+  elements.confirmModal.classList.remove('hidden');
+  document.body.classList.add('is-modal-open');
+
+  return new Promise((resolve) => {
+    confirmResolver = resolve;
+  });
+}
+
+function closeConfirmationModal(accepted) {
+  if (!elements.confirmModal) return;
+  elements.confirmModal.classList.add('hidden');
+  document.body.classList.remove('is-modal-open');
+  if (typeof confirmResolver === 'function') {
+    const resolver = confirmResolver;
+    confirmResolver = null;
+    resolver(Boolean(accepted));
+  }
+}
+
+function buildConfirmationSummary(fields, items, quantityLabel) {
+  const safeFields = Array.isArray(fields) ? fields : [];
+  const safeItems = Array.isArray(items) ? items : [];
+  const infoRows = safeFields
+    .map(
+      (field) => `
+      <div class="confirm-summary__field">
+        <dt>${escapeHtml(field.label || '')}</dt>
+        <dd>${escapeHtml(field.value || '--')}</dd>
+      </div>`
+    )
+    .join('');
+
+  const itemsRows = safeItems
+    .map(
+      (item) => `
+      <tr>
+        <td>${escapeHtml(item.code || '')}</td>
+        <td>${escapeHtml(item.description || '')}</td>
+        <td>${escapeHtml(item.unit || '')}</td>
+        <td>${escapeHtml(String(item.quantity ?? ''))}</td>
+      </tr>`
+    )
+    .join('');
+
+  return `
+    <dl class="confirm-summary__fields">${infoRows}</dl>
+    <div class="confirm-summary__table-wrap">
+      <table class="confirm-summary__table">
+        <thead>
+          <tr>
+            <th>Código</th>
+            <th>Producto</th>
+            <th>Unidad</th>
+            <th>${escapeHtml(quantityLabel)}</th>
+          </tr>
+        </thead>
+        <tbody>${itemsRows}</tbody>
+      </table>
+    </div>
+  `;
+}
+
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
 }

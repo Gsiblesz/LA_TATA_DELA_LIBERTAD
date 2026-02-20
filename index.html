@@ -315,11 +315,34 @@
       </main>
     </div>
 
+    <div id="confirm-modal" class="confirm-modal hidden" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
+      <div class="confirm-modal__backdrop" data-close-confirm></div>
+      <div class="confirm-modal__panel" role="document">
+        <header class="confirm-modal__header">
+          <h3 id="confirm-title">Confirmar envío</h3>
+          <button type="button" class="confirm-modal__close" data-close-confirm aria-label="Cerrar">×</button>
+        </header>
+        <div class="confirm-modal__body">
+          <p class="muted">Verifica los datos antes de enviar.</p>
+          <div id="confirm-summary" class="confirm-summary"></div>
+
+          <label class="confirm-checkbox">
+            <input type="checkbox" id="confirm-accept" />
+            <span id="confirm-accept-text"></span>
+          </label>
+        </div>
+        <footer class="confirm-modal__actions">
+          <button type="button" class="btn btn--ghost" data-close-confirm>Volver a editar</button>
+          <button type="button" class="btn" id="confirm-submit-btn" disabled>Confirmar y enviar</button>
+        </footer>
+      </div>
+    </div>
+
     <div id="toast" class="toast" aria-live="polite"></div>
     <datalist id="product-options"></datalist>
 
     <script>
-      window.APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbws8lmcWsfTX8q2yq2lVayB-6ZslYHyfxoEjkXwk1qNYt9c15wvW5Zh81pN__ohyYUK7w/exec';
+      window.APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw5K1ry5cFecnOA6m2g54EaaF-tkPS_4paXP629Hf7ZgNellgQmppRxhB4KI2wfEfVaJA/exec';
     </script>
     <script src="script.js" defer></script>
   </body>
