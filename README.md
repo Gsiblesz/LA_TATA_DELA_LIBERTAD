@@ -18,7 +18,7 @@ Implementación estática (HTML/CSS/JS) para administrar los formularios de **So
 
 ```html
 <script>
-  window.APPS_SCRIPT_URL = 'https://script.google.com/macros/s/REEMPLAZA_CON_TU_WEB_APP/exec';
+  window.APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyF5y2N6UgMSxWwHEFYNf6K6RP9CRfNtWEzOLYgypKdNOkFPXpCG_bg4li3dcLKIpQy8g/exec';
 </script>
 ```
 
