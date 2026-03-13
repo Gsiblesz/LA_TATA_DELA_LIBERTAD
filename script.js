@@ -2,25 +2,12 @@
 
 const CURRENT_APPS_SCRIPT_URL =
   'https://script.google.com/macros/s/AKfycbxz04-8iX-_WbiesS0Et1IcsMAzY1-LBjYwk0j2k36SinN4qKPnan3SaFim-qvJUjLA/exec';
-const LEGACY_APPS_SCRIPT_URLS = new Set([
-  'https://script.google.com/macros/s/AKfycbwISZ5r_1X5w_XOmk_a1KRIUCboMAl6mwkqJ4inudJ1uz4hy8tXaXH-r0eejSSEwucWSg/exec',
-]);
-
-const APPS_SCRIPT_URL = resolveAppsScriptUrl(window.APPS_SCRIPT_URL);
+const APPS_SCRIPT_URL = CURRENT_APPS_SCRIPT_URL;
 const SEDES = ['SL', 'LPG', 'SC', 'SCH', 'PB-2', 'E PB-2', 'LG', 'VM', 'BC', 'LA GUAIRA'];
 const MERMA_SEDES = ['BC', 'LPG'];
 const FORCED_HORA_SEDES = ['BC', 'PB-2', 'VM'];
 const FORCED_HORA_VALUE = '09:00';
 const STORAGE_KEY = 'latata-catalog-v1';
-
-function resolveAppsScriptUrl(rawUrl) {
-  const normalized = String(rawUrl || '').trim();
-  if (LEGACY_APPS_SCRIPT_URLS.has(normalized)) {
-    console.warn('Se detecto URL legado de Apps Script. Se usa la URL actual.');
-    return CURRENT_APPS_SCRIPT_URL;
-  }
-  return normalized || CURRENT_APPS_SCRIPT_URL;
-}
 
 const state = {
   products: [],
