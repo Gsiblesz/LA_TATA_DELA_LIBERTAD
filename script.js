@@ -1,11 +1,26 @@
 'use strict';
 
-const APPS_SCRIPT_URL = (window.APPS_SCRIPT_URL || '').trim();
+const CURRENT_APPS_SCRIPT_URL =
+  'https://script.google.com/macros/s/AKfycbxz04-8iX-_WbiesS0Et1IcsMAzY1-LBjYwk0j2k36SinN4qKPnan3SaFim-qvJUjLA/exec';
+const LEGACY_APPS_SCRIPT_URLS = new Set([
+  'https://script.google.com/macros/s/AKfycbwISZ5r_1X5w_XOmk_a1KRIUCboMAl6mwkqJ4inudJ1uz4hy8tXaXH-r0eejSSEwucWSg/exec',
+]);
+
+const APPS_SCRIPT_URL = resolveAppsScriptUrl(window.APPS_SCRIPT_URL);
 const SEDES = ['SL', 'LPG', 'SC', 'SCH', 'PB-2', 'E PB-2', 'LG', 'VM', 'BC', 'LA GUAIRA'];
 const MERMA_SEDES = ['BC', 'LPG'];
 const FORCED_HORA_SEDES = ['BC', 'PB-2', 'VM'];
 const FORCED_HORA_VALUE = '09:00';
 const STORAGE_KEY = 'latata-catalog-v1';
+
+function resolveAppsScriptUrl(rawUrl) {
+  const normalized = String(rawUrl || '').trim();
+  if (LEGACY_APPS_SCRIPT_URLS.has(normalized)) {
+    console.warn('Se detecto URL legado de Apps Script. Se usa la URL actual.');
+    return CURRENT_APPS_SCRIPT_URL;
+  }
+  return normalized || CURRENT_APPS_SCRIPT_URL;
+}
 
 const state = {
   products: [],
@@ -796,9 +811,10 @@ async function fetchProducts(showToastOnSuccess = false) {
       showToast('Catálogo sincronizado.', 'success');
     }
   } catch (error) {
-    console.error(error);
-    setCatalogStatus(error.message, true);
-    showToast(error.message, 'error');
+    const normalizedError = normalizeNetworkError(error);
+    console.error(normalizedError);
+    setCatalogStatus(normalizedError.message, true);
+    showToast(normalizedError.message, 'error');
   }
 }
 
@@ -831,16 +847,30 @@ async function postData(action, payload) {
     throw new Error('Configura la URL del Apps Script.');
   }
 
-  const response = await fetch(APPS_SCRIPT_URL, {
-    method: 'POST',
-    body: JSON.stringify({ action, payload }),
-  });
+  let response;
+  try {
+    response = await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action, payload }),
+    });
+  } catch (error) {
+    throw normalizeNetworkError(error);
+  }
 
   const data = await readResponseData(response);
   if (!data.success) {
     throw new Error(data.message || 'Error en la operación.');
   }
   return data;
+}
+
+function normalizeNetworkError(error) {
+  if (error instanceof TypeError && /Failed to fetch/i.test(error.message || '')) {
+    return new Error(
+      `No se pudo conectar con Apps Script (${APPS_SCRIPT_URL}). Revisa permisos del despliegue (Anyone), URL activa y CORS.`
+    );
+  }
+  return error instanceof Error ? error : new Error('Error de red al conectar con Apps Script.');
 }
 
 async function readResponseData(response) {
