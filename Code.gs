@@ -75,6 +75,8 @@ function createSolicitud_(payload) {
   if (!items.length) throw new Error('Debes enviar al menos un producto.');
 
   const registroAutomatico = new Date();
+  const productCatalogByCode = getProductCatalogByCode_();
+  const mes = getMesDesdeFecha_(payload.fecha, registroAutomatico);
 
   const sanitizedItems = sanitizeSolicitudItems_(items);
   const sheet = getMainSheet_();
@@ -84,7 +86,7 @@ function createSolicitud_(payload) {
   const rows = sanitizedItems.map((item) => [
     payload.hora,
     payload.fecha,
-    '',
+    getFamiliaByCode_(item.code, productCatalogByCode),
     item.code,
     item.unit,
     item.description,
@@ -94,7 +96,7 @@ function createSolicitud_(payload) {
     '',
     '',
     '',
-    '',
+    mes,
     registroAutomatico,
   ]);
 
@@ -141,6 +143,8 @@ function recordEntrega_(payload) {
   const sheet = getMainSheet_();
   const summary = { processed: 0, updated: 0, appended: 0 };
   const registroAutomatico = new Date();
+  const productCatalogByCode = getProductCatalogByCode_();
+  const mes = getMesDesdeFecha_(payload.fecha, registroAutomatico);
 
   if (isRecentEntregaDuplicate_(sheet, payload, sanitizedItems)) {
     throw new Error('Esta entrega ya fue registrada recientemente. Verifica antes de reenviar.');
@@ -148,9 +152,25 @@ function recordEntrega_(payload) {
 
   sanitizedItems.forEach((item) => {
     if (payload.sinSolicitud) {
-      appendEntregaSinSolicitud_(sheet, payload, item, item.cantidadEntregada, registroAutomatico);
+      appendEntregaSinSolicitud_(
+        sheet,
+        payload,
+        item,
+        item.cantidadEntregada,
+        registroAutomatico,
+        productCatalogByCode,
+        mes
+      );
     } else {
-      appendEntregaDirecta_(sheet, payload, item, item.cantidadEntregada, registroAutomatico);
+      appendEntregaDirecta_(
+        sheet,
+        payload,
+        item,
+        item.cantidadEntregada,
+        registroAutomatico,
+        productCatalogByCode,
+        mes
+      );
     }
 
     summary.appended += 1;
@@ -185,11 +205,19 @@ function sanitizeEntregaItems_(items) {
   });
 }
 
-function appendEntregaDirecta_(sheet, payload, item, qty, registroAutomatico) {
+function appendEntregaDirecta_(
+  sheet,
+  payload,
+  item,
+  qty,
+  registroAutomatico,
+  productCatalogByCode,
+  mes
+) {
   const row = [
     payload.hora || '',
     payload.fecha || '',
-    '',
+    getFamiliaByCode_(item.productCode, productCatalogByCode),
     item.productCode || '',
     item.unit || '',
     item.productName || '',
@@ -199,18 +227,26 @@ function appendEntregaDirecta_(sheet, payload, item, qty, registroAutomatico) {
     qty,
     payload.responsableEntrega || '',
     '',
-    '',
+    mes,
     registroAutomatico || new Date(),
   ];
   sheet.appendRow(row);
   return sheet.getLastRow();
 }
 
-function appendEntregaSinSolicitud_(sheet, payload, item, qty, registroAutomatico) {
+function appendEntregaSinSolicitud_(
+  sheet,
+  payload,
+  item,
+  qty,
+  registroAutomatico,
+  productCatalogByCode,
+  mes
+) {
   const row = [
     payload.hora || '',
     payload.fecha || '',
-    '',
+    getFamiliaByCode_(item.productCode, productCatalogByCode),
     item.productCode || '',
     item.unit || '',
     item.productName || '',
@@ -220,7 +256,7 @@ function appendEntregaSinSolicitud_(sheet, payload, item, qty, registroAutomatic
     qty,
     payload.responsableEntrega || '',
     '',
-    '',
+    mes,
     registroAutomatico || new Date(),
   ];
   sheet.appendRow(row);
@@ -340,11 +376,11 @@ function getTailRows_(sheet, count) {
   return sheet.getRange(startRow, 1, rowsToRead, 14).getValues();
 }
 
-function appendMermaSinSolicitud_(sheet, payload, item, qty) {
+function appendMermaSinSolicitud_(sheet, payload, item, qty, productCatalogByCode, mes) {
   const row = [
     payload.hora || '',
     payload.fecha || '',
-    '',
+    getFamiliaByCode_(item.productCode, productCatalogByCode),
     item.productCode || '',
     item.unit || '',
     item.productName || '',
@@ -354,7 +390,7 @@ function appendMermaSinSolicitud_(sheet, payload, item, qty) {
     '',
     '',
     qty,
-    '',
+    mes,
     new Date(),
   ];
   sheet.appendRow(row);
@@ -370,13 +406,16 @@ function recordMerma_(payload) {
 
   const sheet = getMainSheet_();
   const summary = { processed: 0, updated: 0, appended: 0 };
+  const registroAutomatico = new Date();
+  const productCatalogByCode = getProductCatalogByCode_();
+  const mes = getMesDesdeFecha_(payload.fecha, registroAutomatico);
   items.forEach((item) => {
     const qty = Number(item.cantidadMerma) || 0;
     if (qty <= 0) {
       throw new Error(`La merma debe ser mayor a cero (${item.productCode || 'sin código'}).`);
     }
 
-    appendMermaDirecta_(sheet, payload, item, qty);
+    appendMermaDirecta_(sheet, payload, item, qty, registroAutomatico, productCatalogByCode, mes);
     summary.appended += 1;
     summary.processed += 1;
   });
@@ -384,11 +423,11 @@ function recordMerma_(payload) {
   return summary;
 }
 
-function appendMermaDirecta_(sheet, payload, item, qty) {
+function appendMermaDirecta_(sheet, payload, item, qty, registroAutomatico, productCatalogByCode, mes) {
   const row = [
     payload.hora || '',
     payload.fecha || '',
-    '',
+    getFamiliaByCode_(item.productCode, productCatalogByCode),
     item.productCode || '',
     item.unit || '',
     item.productName || '',
@@ -398,8 +437,8 @@ function appendMermaDirecta_(sheet, payload, item, qty) {
     '',
     '',
     qty,
-    '',
-    new Date(),
+    mes,
+    registroAutomatico || new Date(),
   ];
   sheet.appendRow(row);
   return sheet.getLastRow();
@@ -416,7 +455,61 @@ function getProducts_() {
       code: String(row[0]).trim(),
       description: String(row[1]).trim(),
       unit: String(row[2] || '').trim() || 'UND',
+      family: String(row[3] || '').trim(),
     }));
+}
+
+function getProductCatalogByCode_() {
+  return getProducts_().reduce((acc, product) => {
+    acc[normalizeText_(product.code)] = {
+      family: String(product.family || '').trim(),
+    };
+    return acc;
+  }, {});
+}
+
+function getFamiliaByCode_(productCode, productCatalogByCode) {
+  const normalizedCode = normalizeText_(productCode);
+  if (!normalizedCode) return '';
+  return String(productCatalogByCode?.[normalizedCode]?.family || '').trim();
+}
+
+function getMesDesdeFecha_(fecha, fallbackDate) {
+  const monthNames = [
+    'ENERO',
+    'FEBRERO',
+    'MARZO',
+    'ABRIL',
+    'MAYO',
+    'JUNIO',
+    'JULIO',
+    'AGOSTO',
+    'SEPTIEMBRE',
+    'OCTUBRE',
+    'NOVIEMBRE',
+    'DICIEMBRE',
+  ];
+
+  let parsedDate = null;
+  if (fecha instanceof Date && !isNaN(fecha.getTime())) {
+    parsedDate = fecha;
+  } else {
+    const raw = String(fecha || '').trim();
+    if (raw) {
+      const ddmmyyyy = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+      if (ddmmyyyy) {
+        parsedDate = new Date(Number(ddmmyyyy[3]), Number(ddmmyyyy[2]) - 1, Number(ddmmyyyy[1]));
+      } else {
+        const tentative = new Date(raw);
+        if (!isNaN(tentative.getTime())) {
+          parsedDate = tentative;
+        }
+      }
+    }
+  }
+
+  const safeDate = parsedDate && !isNaN(parsedDate.getTime()) ? parsedDate : (fallbackDate || new Date());
+  return monthNames[safeDate.getMonth()] || '';
 }
 
 function parseBody_(e) {
