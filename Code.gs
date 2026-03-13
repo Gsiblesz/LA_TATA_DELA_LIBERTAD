@@ -518,9 +518,19 @@ function parseBody_(e) {
 }
 
 function getSpreadsheet_() {
-  const ss = SpreadsheetApp.openById(CONFIG.spreadsheetId);
-  if (!ss) throw new Error('No se pudo abrir el Spreadsheet.');
-  return ss;
+  try {
+    const ss = SpreadsheetApp.openById(CONFIG.spreadsheetId);
+    if (!ss) throw new Error('No se pudo abrir el Spreadsheet.');
+    return ss;
+  } catch (error) {
+    const rawMessage = String(error && error.message ? error.message : error || '');
+    if (/no tienes permiso para acceder al documento solicitado|you do not have permission/i.test(rawMessage)) {
+      throw new Error(
+        'Sin acceso al Google Sheets. Corrige el despliegue: 1) Deploy > Manage deployments > Web app > Execute as: Me (propietario). 2) Who has access: Anyone (o Anyone with the link). 3) Verifica que el spreadsheetId sea el correcto y que el propietario del script tenga acceso de editor.'
+      );
+    }
+    throw error;
+  }
 }
 
 function getMainSheet_() {

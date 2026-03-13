@@ -1,7 +1,7 @@
 'use strict';
 
 const CURRENT_APPS_SCRIPT_URL =
-  'https://script.google.com/macros/s/AKfycbxz04-8iX-_WbiesS0Et1IcsMAzY1-LBjYwk0j2k36SinN4qKPnan3SaFim-qvJUjLA/exec';
+  'https://script.google.com/macros/s/AKfycbzsJttokbSkW6AP8laHa4mvwk8xy8ESCpor5E4ClSlPlEktLG0g3xneahR0XXC99r8I/exec';
 const APPS_SCRIPT_URL = CURRENT_APPS_SCRIPT_URL;
 const SEDES = ['SL', 'LPG', 'SC', 'SCH', 'PB-2', 'E PB-2', 'LG', 'VM', 'BC', 'LA GUAIRA'];
 const MERMA_SEDES = ['BC', 'LPG'];
@@ -846,9 +846,19 @@ async function postData(action, payload) {
 
   const data = await readResponseData(response);
   if (!data.success) {
-    throw new Error(data.message || 'Error en la operación.');
+    throw new Error(normalizeBackendErrorMessage(data.message || 'Error en la operación.'));
   }
   return data;
+}
+
+function normalizeBackendErrorMessage(message) {
+  const text = String(message || '').trim();
+  if (
+    /no tienes permiso para acceder al documento solicitado|you do not have permission/i.test(text)
+  ) {
+    return 'No hay permisos sobre la hoja de cálculo. En Apps Script despliega el Web App con Execute as: Me (propietario), acceso Anyone/Anyone with the link y verifica que el spreadsheetId sea correcto.';
+  }
+  return text || 'Error en la operación.';
 }
 
 function normalizeNetworkError(error) {
