@@ -151,16 +151,11 @@ function recordEntrega_(payload) {
   }
 
   sanitizedItems.forEach((item) => {
-    if (payload.sinSolicitud) {
-      appendEntregaSinSolicitud_(
-        sheet,
-        payload,
-        item,
-        item.cantidadEntregada,
-        registroAutomatico,
-        productCatalogByCode,
-        mes
-      );
+    const openRowIndex = findOpenSolicitudRowForEntrega_(sheet, payload, item);
+
+    if (openRowIndex > 0) {
+      updateEntregaOnSolicitudRow_(sheet, openRowIndex, payload, item.cantidadEntregada, registroAutomatico, mes);
+      summary.updated += 1;
     } else {
       appendEntregaDirecta_(
         sheet,
@@ -171,13 +166,64 @@ function recordEntrega_(payload) {
         productCatalogByCode,
         mes
       );
+      summary.appended += 1;
     }
 
-    summary.appended += 1;
     summary.processed += 1;
   });
 
   return summary;
+}
+
+function findOpenSolicitudRowForEntrega_(sheet, payload, item) {
+  if (!sheet || !item) return 0;
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return 0;
+
+  const data = sheet.getRange(2, 1, lastRow - 1, 14).getValues();
+  const expectedFecha = normalizeDate_(payload.fecha);
+  const expectedSede = normalizeText_(payload.sede);
+  const expectedCode = normalizeText_(item.productCode);
+
+  for (let i = data.length - 1; i >= 0; i -= 1) {
+    const row = data[i];
+    const rowFecha = normalizeDate_(row[CONFIG.columns.fecha - 1]);
+    const rowSede = normalizeText_(row[CONFIG.columns.sede - 1]);
+    const rowCode = normalizeText_(row[CONFIG.columns.codigo - 1]);
+    const qtySolicitada = Number(row[CONFIG.columns.cantidadSolicitada - 1]) || 0;
+    const qtyEntregada = Number(row[CONFIG.columns.cantidadEntregada - 1]) || 0;
+
+    const matchesBase =
+      rowFecha === expectedFecha &&
+      rowSede === expectedSede &&
+      rowCode === expectedCode;
+
+    if (!matchesBase) continue;
+    if (qtySolicitada <= 0) continue;
+    if (qtyEntregada > 0) continue;
+
+    return i + 2;
+  }
+
+  return 0;
+}
+
+function updateEntregaOnSolicitudRow_(sheet, rowIndex, payload, qty, registroAutomatico, mes) {
+  sheet.getRange(rowIndex, CONFIG.columns.cantidadEntregada).setValue(qty);
+  sheet.getRange(rowIndex, CONFIG.columns.responsableEntrega).setValue(payload.responsableEntrega || '');
+
+  if (payload.hora) {
+    sheet.getRange(rowIndex, CONFIG.columns.hora).setValue(payload.hora);
+  }
+  if (payload.fecha) {
+    sheet.getRange(rowIndex, CONFIG.columns.fecha).setValue(payload.fecha);
+  }
+  if (payload.sede) {
+    sheet.getRange(rowIndex, CONFIG.columns.sede).setValue(payload.sede);
+  }
+
+  sheet.getRange(rowIndex, CONFIG.columns.mes).setValue(mes);
+  sheet.getRange(rowIndex, CONFIG.columns.timestamp).setValue(registroAutomatico || new Date());
 }
 
 function sanitizeEntregaItems_(items) {
@@ -224,35 +270,6 @@ function appendEntregaDirecta_(
     payload.sede || '',
     '',
     '',
-    qty,
-    payload.responsableEntrega || '',
-    '',
-    mes,
-    registroAutomatico || new Date(),
-  ];
-  sheet.appendRow(row);
-  return sheet.getLastRow();
-}
-
-function appendEntregaSinSolicitud_(
-  sheet,
-  payload,
-  item,
-  qty,
-  registroAutomatico,
-  productCatalogByCode,
-  mes
-) {
-  const row = [
-    payload.hora || '',
-    payload.fecha || '',
-    getFamiliaByCode_(item.productCode, productCatalogByCode),
-    item.productCode || '',
-    item.unit || '',
-    item.productName || '',
-    payload.sede || '',
-    '',
-    'SIN SOLICITUD',
     qty,
     payload.responsableEntrega || '',
     '',
@@ -325,22 +342,18 @@ function isRecentEntregaDuplicate_(sheet, payload, items) {
   const expectedHora = normalizeText_(payload.hora);
   const expectedSede = normalizeText_(payload.sede);
   const expectedResponsable = normalizeText_(payload.responsableEntrega);
-  const expectedSolicitudFlag = payload.sinSolicitud ? 'SIN SOLICITUD' : '';
-
   const headersMatch = rows.every((row) => {
     const rowDate = normalizeDate_(row[CONFIG.columns.fecha - 1]);
     const rowHora = normalizeText_(row[CONFIG.columns.hora - 1]);
     const rowSede = normalizeText_(row[CONFIG.columns.sede - 1]);
     const rowResponsable = normalizeText_(row[CONFIG.columns.responsableEntrega - 1]);
     const qtyEntregada = Number(row[CONFIG.columns.cantidadEntregada - 1]) || 0;
-    const solicitudFlag = String(row[CONFIG.columns.responsableSolicitud - 1] || '').trim();
     return (
       rowDate === expectedDate &&
       rowHora === expectedHora &&
       rowSede === expectedSede &&
       rowResponsable === expectedResponsable &&
-      qtyEntregada > 0 &&
-      solicitudFlag === expectedSolicitudFlag
+      qtyEntregada > 0
     );
   });
 

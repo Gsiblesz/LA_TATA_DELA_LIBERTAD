@@ -33,7 +33,7 @@ Implementación estática (HTML/CSS/JS) para administrar los formularios de **So
 ## Flujo de cada formulario
 
 - **Solicitudes de Sedes**: registra `Fecha, Hora, Sede, Responsable` y una lista dinámica de productos con cantidades solicitadas. Cada producto genera una fila nueva en la hoja con la columna *FAMILIA* vacía.
-- **Entregado a Sedes**: busca una fila existente por combinación `Fecha + Sede + Código de producto` y actualiza `Cantidad Entregada` y `Responsable Entrega`. Si se marca "entrega sin solicitud", se crea una fila nueva con el texto `SIN SOLICITUD` en la columna de responsable de solicitud.
+- **Entregado a Sedes**: busca una fila existente por combinación `Fecha + Sede + Código de producto` y actualiza `Cantidad Entregada` y `Responsable Entrega` en esa misma fila. Si no existe solicitud previa para ese producto, crea una nueva fila con `Cantidad Solicitada` vacía.
 - **Merma de Producción**: busca la fila correspondiente (Fecha + Sede + Producto) y actualiza únicamente la columna `MERMA`. Actualmente solo están habilitadas las sedes `BC` y `LPG`.
 - **Catálogo**: consulta la pestaña `PRODUCTOS` del Sheets y permite filtrar por código o descripción. Los datos se guardan en `localStorage` para cargar más rápido sin conexión.
 

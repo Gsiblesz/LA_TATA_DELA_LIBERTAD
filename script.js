@@ -339,7 +339,6 @@ function initRegistrosForm() {
       hora: isForcedHoraSede(sede) ? FORCED_HORA_VALUE : formData.get('hora') || '',
       sede,
       responsableEntrega: formData.get('responsableEntrega') || '',
-      sinSolicitud: formData.get('sinSolicitud') === 'on',
       items,
     };
 
@@ -351,7 +350,7 @@ function initRegistrosForm() {
         { label: 'Hora', value: payload.hora },
         { label: 'Sede', value: payload.sede },
         { label: 'Responsable entrega', value: payload.responsableEntrega },
-        { label: 'Modo', value: payload.sinSolicitud ? 'Sin solicitud previa' : 'Con solicitud' },
+        { label: 'Modo', value: 'Vinculada a solicitud' },
       ],
       items: payload.items.map((item) => ({
         code: item.productCode,
