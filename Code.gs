@@ -185,6 +185,8 @@ function findOpenSolicitudRowForEntrega_(sheet, payload, item) {
   const expectedSede = normalizeText_(payload.sede);
   const expectedCode = normalizeText_(item.productCode);
 
+  let fallbackRowIndex = 0;
+
   for (let i = data.length - 1; i >= 0; i -= 1) {
     const row = data[i];
     const rowFecha = normalizeDate_(row[CONFIG.columns.fecha - 1]);
@@ -198,14 +200,24 @@ function findOpenSolicitudRowForEntrega_(sheet, payload, item) {
       rowSede === expectedSede &&
       rowCode === expectedCode;
 
-    if (!matchesBase) continue;
+    const matchesFallback =
+      rowSede === expectedSede &&
+      rowCode === expectedCode;
+
+    if (!matchesBase && !matchesFallback) continue;
     if (qtySolicitada <= 0) continue;
     if (qtyEntregada > 0) continue;
 
-    return i + 2;
+    if (matchesBase) {
+      return i + 2;
+    }
+
+    if (!fallbackRowIndex) {
+      fallbackRowIndex = i + 2;
+    }
   }
 
-  return 0;
+  return fallbackRowIndex;
 }
 
 function updateEntregaOnSolicitudRow_(sheet, rowIndex, payload, qty, registroAutomatico, mes) {
