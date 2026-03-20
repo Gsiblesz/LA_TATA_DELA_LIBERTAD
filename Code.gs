@@ -151,7 +151,13 @@ function recordEntrega_(payload) {
   }
 
   sanitizedItems.forEach((item) => {
-    const openRowIndex = findOpenSolicitudRowForEntrega_(sheet, payload, item);
+    const openRowIndex = findOpenSolicitudRowForEntrega_(
+      sheet,
+      payload,
+      item,
+      item.cantidadEntregada,
+      productCatalogByCode
+    );
 
     if (openRowIndex > 0) {
       updateEntregaOnSolicitudRow_(sheet, openRowIndex, payload, item.cantidadEntregada, registroAutomatico, mes);
@@ -175,49 +181,53 @@ function recordEntrega_(payload) {
   return summary;
 }
 
-function findOpenSolicitudRowForEntrega_(sheet, payload, item) {
+function findOpenSolicitudRowForEntrega_(sheet, payload, item, qtyEntregadaEsperada, productCatalogByCode) {
   if (!sheet || !item) return 0;
   const lastRow = sheet.getLastRow();
   if (lastRow < 2) return 0;
 
   const data = sheet.getRange(2, 1, lastRow - 1, 14).getValues();
   const expectedFecha = normalizeDate_(payload.fecha);
+  const expectedHora = normalizeHora_(payload.hora);
   const expectedSede = normalizeText_(payload.sede);
+  const expectedFamilia = normalizeText_(getFamiliaByCode_(item.productCode, productCatalogByCode));
   const expectedCode = normalizeText_(item.productCode);
+  const expectedUnidad = normalizeText_(item.unit);
+  const expectedProducto = normalizeText_(item.productName);
+  const expectedQty = Number(qtyEntregadaEsperada) || 0;
 
-  let fallbackRowIndex = 0;
+  if (expectedQty <= 0) return 0;
 
   for (let i = data.length - 1; i >= 0; i -= 1) {
     const row = data[i];
     const rowFecha = normalizeDate_(row[CONFIG.columns.fecha - 1]);
+    const rowHora = normalizeHora_(row[CONFIG.columns.hora - 1]);
     const rowSede = normalizeText_(row[CONFIG.columns.sede - 1]);
+    const rowFamilia = normalizeText_(row[CONFIG.columns.familia - 1]);
     const rowCode = normalizeText_(row[CONFIG.columns.codigo - 1]);
+    const rowUnidad = normalizeText_(row[CONFIG.columns.unidad - 1]);
+    const rowProducto = normalizeText_(row[CONFIG.columns.producto - 1]);
     const qtySolicitada = Number(row[CONFIG.columns.cantidadSolicitada - 1]) || 0;
     const qtyEntregada = Number(row[CONFIG.columns.cantidadEntregada - 1]) || 0;
 
     const matchesBase =
       rowFecha === expectedFecha &&
+      rowHora === expectedHora &&
       rowSede === expectedSede &&
+      rowFamilia === expectedFamilia &&
       rowCode === expectedCode;
 
-    const matchesFallback =
-      rowSede === expectedSede &&
-      rowCode === expectedCode;
-
-    if (!matchesBase && !matchesFallback) continue;
+    if (!matchesBase) continue;
+    if (rowUnidad !== expectedUnidad) continue;
+    if (rowProducto !== expectedProducto) continue;
+    if (Math.abs(qtySolicitada - expectedQty) > 0.000001) continue;
     if (qtySolicitada <= 0) continue;
     if (qtyEntregada > 0) continue;
 
-    if (matchesBase) {
-      return i + 2;
-    }
-
-    if (!fallbackRowIndex) {
-      fallbackRowIndex = i + 2;
-    }
+    return i + 2;
   }
 
-  return fallbackRowIndex;
+  return 0;
 }
 
 function updateEntregaOnSolicitudRow_(sheet, rowIndex, payload, qty, registroAutomatico, mes) {
@@ -612,6 +622,23 @@ function normalizeDate_(value) {
     const [day, month, year] = text.split('/');
     return `${year.padStart(4, '0')}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
   }
+  return text;
+}
+
+function normalizeHora_(value) {
+  if (value instanceof Date) {
+    return Utilities.formatDate(value, CONFIG.timeZone, 'HH:mm');
+  }
+  const text = String(value || '').trim();
+  if (!text) return '';
+
+  const match = text.match(/^(\d{1,2}):(\d{2})(?::\d{2})?$/);
+  if (match) {
+    const hh = String(match[1]).padStart(2, '0');
+    const mm = String(match[2]).padStart(2, '0');
+    return `${hh}:${mm}`;
+  }
+
   return text;
 }
 
