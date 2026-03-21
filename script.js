@@ -853,6 +853,9 @@ async function postData(action, payload) {
 
 function normalizeBackendErrorMessage(message) {
   const text = String(message || '').trim();
+  if (/cannot edit protected|rango protegido|hoja protegida|protected range|protected sheet/i.test(text)) {
+    return 'La hoja DATA o algún rango está protegido. Abre Google Sheets > Datos > Hojas y rangos protegidos y permite edición a la cuenta propietaria del Apps Script.';
+  }
   if (
     /no tienes permiso para acceder al documento solicitado|you do not have permission/i.test(text)
   ) {

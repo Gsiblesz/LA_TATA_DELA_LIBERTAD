@@ -24,6 +24,11 @@ const CONFIG = {
 function doGet(e) {
   const action = String(e?.parameter?.action || '').toLowerCase();
   try {
+    if (action === 'diagnose') {
+      const report = diagnoseAccess_();
+      return buildResponse_(true, { report }, 'Diagnóstico completado.');
+    }
+
     if (action === 'getproducts') {
       const products = getProducts_();
       return buildResponse_(true, { products }, 'Catálogo sincronizado.');
@@ -515,6 +520,64 @@ function getMesDesdeFecha_(fecha, fallbackDate) {
 function parseBody_(e) {
   if (!e?.postData?.contents) throw new Error('Cuerpo vacío.');
   return JSON.parse(e.postData.contents);
+}
+
+function diagnoseAccess_() {
+  const report = {
+    spreadsheetId: CONFIG.spreadsheetId,
+    mainSheetName: CONFIG.mainSheetName,
+    catalogSheetName: CONFIG.catalogSheetName,
+    timeZone: CONFIG.timeZone,
+    activeUserEmail: '',
+    effectiveUserEmail: '',
+    canOpenSpreadsheet: false,
+    hasMainSheet: false,
+    hasCatalogSheet: false,
+    protections: {
+      sheetCount: 0,
+      rangeCount: 0,
+    },
+    canWriteMainSheet: false,
+    writeError: '',
+  };
+
+  try {
+    report.activeUserEmail = Session.getActiveUser().getEmail() || '';
+  } catch (_) {}
+
+  try {
+    report.effectiveUserEmail = Session.getEffectiveUser().getEmail() || '';
+  } catch (_) {}
+
+  const ss = SpreadsheetApp.openById(CONFIG.spreadsheetId);
+  report.canOpenSpreadsheet = Boolean(ss);
+
+  const main = ss.getSheetByName(CONFIG.mainSheetName);
+  const catalog = ss.getSheetByName(CONFIG.catalogSheetName);
+  report.hasMainSheet = Boolean(main);
+  report.hasCatalogSheet = Boolean(catalog);
+
+  if (!main) {
+    report.writeError = `No se encontró la hoja principal: ${CONFIG.mainSheetName}`;
+    return report;
+  }
+
+  try {
+    report.protections.sheetCount = main.getProtections(SpreadsheetApp.ProtectionType.SHEET).length;
+    report.protections.rangeCount = main.getProtections(SpreadsheetApp.ProtectionType.RANGE).length;
+  } catch (_) {}
+
+  try {
+    const testRange = main.getRange(1, CONFIG.columns.timestamp);
+    const previous = testRange.getValue();
+    testRange.setValue(previous);
+    report.canWriteMainSheet = true;
+  } catch (error) {
+    report.canWriteMainSheet = false;
+    report.writeError = String(error && error.message ? error.message : error || 'Error de escritura desconocido.');
+  }
+
+  return report;
 }
 
 function getSpreadsheet_() {
