@@ -40,7 +40,7 @@ function doGet(e) {
 
     return buildResponse_(false, null, 'Acción GET no soportada.');
   } catch (error) {
-    return buildResponse_(false, null, error.message);
+    return buildResponse_(false, null, normalizeAppErrorMessage_(error));
   }
 }
 
@@ -51,7 +51,7 @@ function doPost(e) {
     const result = withLock_(() => handleAction_(normalizedAction, payload || {}));
     return buildResponse_(true, result.data, result.message);
   } catch (error) {
-    return buildResponse_(false, null, error.message);
+    return buildResponse_(false, null, normalizeAppErrorMessage_(error));
   }
 }
 
@@ -655,6 +655,37 @@ function normalizeDate_(value) {
 
 function normalizeText_(value) {
   return String(value || '').trim().toUpperCase();
+}
+
+function normalizeAppErrorMessage_(error) {
+  const rawMessage = String(error && error.message ? error.message : error || '').trim();
+  if (!rawMessage) {
+    return 'Error interno del Apps Script.';
+  }
+
+  if (
+    /cannot edit protected|rango protegido|hoja protegida|protected range|protected sheet/i.test(
+      rawMessage
+    )
+  ) {
+    return (
+      'La hoja DATA o alguno de sus rangos está protegido para la cuenta que ejecuta el Web App. ' +
+      'En Google Sheets, revisa Datos > Hojas y rangos protegidos y permite edición al propietario del Apps Script.'
+    );
+  }
+
+  if (
+    /no tienes permiso para acceder al documento solicitado|you do not have permission|insufficient permissions/i.test(
+      rawMessage
+    )
+  ) {
+    return (
+      'No hay permisos de escritura sobre la hoja de cálculo. Verifica: 1) Deploy > Manage deployments > Web app > Execute as: Me (propietario). ' +
+      '2) Who has access: Anyone o Anyone with the link. 3) El propietario del script debe tener rol Editor en el Google Sheets.'
+    );
+  }
+
+  return rawMessage;
 }
 
 function buildResponse_(success, data, message) {
