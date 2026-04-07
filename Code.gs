@@ -85,8 +85,8 @@ function createSolicitud_(payload) {
 
   const sanitizedItems = sanitizeSolicitudItems_(items);
   const sheet = getMainSheet_();
-  if (isRecentSolicitudDuplicate_(sheet, payload, sanitizedItems)) {
-    throw new Error('Esta solicitud ya fue registrada recientemente. Verifica antes de reenviar.');
+  if (isSolicitudDuplicate_(sheet, payload, sanitizedItems)) {
+    throw new Error('Esta respuesta ya fue enviada. Verifica antes de reenviar.');
   }
   const rows = sanitizedItems.map((item) => [
     payload.hora,
@@ -151,8 +151,8 @@ function recordEntrega_(payload) {
   const productCatalogByCode = getProductCatalogByCode_();
   const mes = getMesDesdeFecha_(payload.fecha, registroAutomatico);
 
-  if (isRecentEntregaDuplicate_(sheet, payload, sanitizedItems)) {
-    throw new Error('Esta entrega ya fue registrada recientemente. Verifica antes de reenviar.');
+  if (isEntregaDuplicate_(sheet, payload, sanitizedItems)) {
+    throw new Error('Esta respuesta ya fue enviada. Verifica antes de reenviar.');
   }
 
   sanitizedItems.forEach((item) => {
@@ -268,89 +268,63 @@ function appendEntregaSinSolicitud_(
   return sheet.getLastRow();
 }
 
-function isRecentSolicitudDuplicate_(sheet, payload, items) {
+function isSolicitudDuplicate_(sheet, payload, items) {
   if (!sheet || !items.length) return false;
-  const lastRow = sheet.getLastRow();
-  if (lastRow < 2 || (lastRow - 1) < items.length) return false;
 
-  const rows = getTailRows_(sheet, items.length);
+  const rows = getAllDataRows_(sheet);
   if (!rows.length) return false;
 
   const expectedDate = normalizeDate_(payload.fecha);
-  const expectedHora = normalizeText_(payload.hora);
   const expectedSede = normalizeText_(payload.sede);
   const expectedResponsable = normalizeText_(payload.responsable);
-
-  const headersMatch = rows.every((row) => {
-    const rowDate = normalizeDate_(row[CONFIG.columns.fecha - 1]);
-    const rowHora = normalizeText_(row[CONFIG.columns.hora - 1]);
-    const rowSede = normalizeText_(row[CONFIG.columns.sede - 1]);
-    const rowResponsable = normalizeText_(row[CONFIG.columns.responsableSolicitud - 1]);
-    const qtySolicitada = Number(row[CONFIG.columns.cantidadSolicitada - 1]) || 0;
-    const qtyEntregada = Number(row[CONFIG.columns.cantidadEntregada - 1]) || 0;
-    return (
-      rowDate === expectedDate &&
-      rowHora === expectedHora &&
-      rowSede === expectedSede &&
-      rowResponsable === expectedResponsable &&
-      qtySolicitada > 0 &&
-      qtyEntregada <= 0
-    );
-  });
-
-  if (!headersMatch) return false;
-
   const incomingSignature = items
     .map((item) => `${normalizeText_(item.code)}|${normalizeText_(item.unit)}|${Number(item.quantity)}`)
     .sort()
     .join('||');
 
-  const existingSignature = rows
-    .map((row) => {
-      const code = row[CONFIG.columns.codigo - 1];
-      const unit = row[CONFIG.columns.unidad - 1];
-      const qty = Number(row[CONFIG.columns.cantidadSolicitada - 1]) || 0;
-      return `${normalizeText_(code)}|${normalizeText_(unit)}|${qty}`;
-    })
-    .sort()
-    .join('||');
+  const signaturesByBatch = {};
 
-  return incomingSignature === existingSignature;
+  rows.forEach((row, index) => {
+    const rowDate = normalizeDate_(row[CONFIG.columns.fecha - 1]);
+    const rowSede = normalizeText_(row[CONFIG.columns.sede - 1]);
+    const rowResponsable = normalizeText_(row[CONFIG.columns.responsableSolicitud - 1]);
+    const qtySolicitada = Number(row[CONFIG.columns.cantidadSolicitada - 1]) || 0;
+
+    if (
+      rowDate !== expectedDate ||
+      rowSede !== expectedSede ||
+      rowResponsable !== expectedResponsable ||
+      qtySolicitada <= 0
+    ) {
+      return;
+    }
+
+    const batchId = getBatchId_(row, index);
+    const code = row[CONFIG.columns.codigo - 1];
+    const unit = row[CONFIG.columns.unidad - 1];
+    const signatureLine = `${normalizeText_(code)}|${normalizeText_(unit)}|${qtySolicitada}`;
+
+    if (!signaturesByBatch[batchId]) {
+      signaturesByBatch[batchId] = [];
+    }
+    signaturesByBatch[batchId].push(signatureLine);
+  });
+
+  return Object.keys(signaturesByBatch).some((batchId) => {
+    const batchSignature = signaturesByBatch[batchId].slice().sort().join('||');
+    return batchSignature === incomingSignature;
+  });
 }
 
-function isRecentEntregaDuplicate_(sheet, payload, items) {
+function isEntregaDuplicate_(sheet, payload, items) {
   if (!sheet || !items.length) return false;
-  const lastRow = sheet.getLastRow();
-  if (lastRow < 2 || (lastRow - 1) < items.length) return false;
 
-  const rows = getTailRows_(sheet, items.length);
+  const rows = getAllDataRows_(sheet);
   if (!rows.length) return false;
 
   const expectedDate = normalizeDate_(payload.fecha);
-  const expectedHora = normalizeText_(payload.hora);
   const expectedSede = normalizeText_(payload.sede);
   const expectedResponsable = normalizeText_(payload.responsableEntrega);
-  const expectedSolicitudFlag = payload.sinSolicitud ? 'SIN SOLICITUD' : '';
-
-  const headersMatch = rows.every((row) => {
-    const rowDate = normalizeDate_(row[CONFIG.columns.fecha - 1]);
-    const rowHora = normalizeText_(row[CONFIG.columns.hora - 1]);
-    const rowSede = normalizeText_(row[CONFIG.columns.sede - 1]);
-    const rowResponsable = normalizeText_(row[CONFIG.columns.responsableEntrega - 1]);
-    const qtyEntregada = Number(row[CONFIG.columns.cantidadEntregada - 1]) || 0;
-    const solicitudFlag = String(row[CONFIG.columns.responsableSolicitud - 1] || '').trim();
-    return (
-      rowDate === expectedDate &&
-      rowHora === expectedHora &&
-      rowSede === expectedSede &&
-      rowResponsable === expectedResponsable &&
-      qtyEntregada > 0 &&
-      solicitudFlag === expectedSolicitudFlag
-    );
-  });
-
-  if (!headersMatch) return false;
-
   const incomingSignature = items
     .map(
       (item) =>
@@ -359,17 +333,66 @@ function isRecentEntregaDuplicate_(sheet, payload, items) {
     .sort()
     .join('||');
 
-  const existingSignature = rows
-    .map((row) => {
-      const code = row[CONFIG.columns.codigo - 1];
-      const unit = row[CONFIG.columns.unidad - 1];
-      const qty = Number(row[CONFIG.columns.cantidadEntregada - 1]) || 0;
-      return `${normalizeText_(code)}|${normalizeText_(unit)}|${qty}`;
-    })
-    .sort()
-    .join('||');
+  const signaturesByBatch = {};
 
-  return incomingSignature === existingSignature;
+  rows.forEach((row, index) => {
+    const rowDate = normalizeDate_(row[CONFIG.columns.fecha - 1]);
+    const rowSede = normalizeText_(row[CONFIG.columns.sede - 1]);
+    const rowResponsable = normalizeText_(row[CONFIG.columns.responsableEntrega - 1]);
+    const qtyEntregada = Number(row[CONFIG.columns.cantidadEntregada - 1]) || 0;
+
+    if (
+      rowDate !== expectedDate ||
+      rowSede !== expectedSede ||
+      rowResponsable !== expectedResponsable ||
+      qtyEntregada <= 0
+    ) {
+      return;
+    }
+
+    const batchId = getBatchId_(row, index);
+    const code = row[CONFIG.columns.codigo - 1];
+    const unit = row[CONFIG.columns.unidad - 1];
+    const signatureLine = `${normalizeText_(code)}|${normalizeText_(unit)}|${qtyEntregada}`;
+
+    if (!signaturesByBatch[batchId]) {
+      signaturesByBatch[batchId] = [];
+    }
+    signaturesByBatch[batchId].push(signatureLine);
+  });
+
+  return Object.keys(signaturesByBatch).some((batchId) => {
+    const batchSignature = signaturesByBatch[batchId].slice().sort().join('||');
+    return batchSignature === incomingSignature;
+  });
+}
+
+function getAllDataRows_(sheet) {
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return [];
+  return sheet.getRange(2, 1, lastRow - 1, 14).getValues();
+}
+
+function getBatchId_(row, index) {
+  const timestampValue = row[CONFIG.columns.timestamp - 1];
+  const normalizedTimestamp = normalizeTimestamp_(timestampValue);
+  if (normalizedTimestamp) {
+    return normalizedTimestamp;
+  }
+  return `legacy-${index}`;
+}
+
+function normalizeTimestamp_(value) {
+  if (value instanceof Date && !isNaN(value.getTime())) {
+    return String(value.getTime());
+  }
+  const text = String(value || '').trim();
+  if (!text) return '';
+  const parsed = new Date(text);
+  if (!isNaN(parsed.getTime())) {
+    return String(parsed.getTime());
+  }
+  return text;
 }
 
 function getTailRows_(sheet, count) {
