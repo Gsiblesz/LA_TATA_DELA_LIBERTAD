@@ -1,5 +1,5 @@
 const CONFIG = {
-  spreadsheetId: '1qwCi8PvocqX7f0K2X8YcdlG4bST9BK_RChiRbbdoRLE',
+  spreadsheetId: 'REEMPLAZAR_CON_SPREADSHEET_ID_DE_PRUEBAS',
   mainSheetName: 'DATA',
   catalogSheetName: 'PRODUCTOS',
   timeZone: Session.getScriptTimeZone() || 'America/Caracas',

@@ -1,7 +1,7 @@
 'use strict';
 
 const CURRENT_APPS_SCRIPT_URL =
-  'https://script.google.com/macros/s/AKfycbzsJttokbSkW6AP8laHa4mvwk8xy8ESCpor5E4ClSlPlEktLG0g3xneahR0XXC99r8I/exec';
+  'REEMPLAZAR_CON_WEB_APP_DE_PRUEBAS';
 const APPS_SCRIPT_URL = String(window.APPS_SCRIPT_URL || CURRENT_APPS_SCRIPT_URL || '').trim();
 const SEDES = ['SL', 'LPG', 'SC', 'SCH', 'PB-2', 'E PB-2', 'LG', 'VM', 'BC', 'LA GUAIRA'];
 const MERMA_SEDES = ['BC', 'LPG'];
