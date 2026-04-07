@@ -274,45 +274,35 @@ function isSolicitudDuplicate_(sheet, payload, items) {
   const rows = getAllDataRows_(sheet);
   if (!rows.length) return false;
 
-  const expectedDate = normalizeDate_(payload.fecha);
-  const expectedSede = normalizeText_(payload.sede);
-  const expectedResponsable = normalizeText_(payload.responsable);
-  const incomingSignature = items
-    .map((item) => `${normalizeText_(item.code)}|${normalizeText_(item.unit)}|${Number(item.quantity)}`)
-    .sort()
-    .join('||');
+  const existingRowKeys = rows.reduce((acc, row) => {
+    const key = buildDuplicateRowKey_({
+      hora: row[CONFIG.columns.hora - 1],
+      fecha: row[CONFIG.columns.fecha - 1],
+      codigo: row[CONFIG.columns.codigo - 1],
+      producto: row[CONFIG.columns.producto - 1],
+      sede: row[CONFIG.columns.sede - 1],
+      cantidadSolicitada: row[CONFIG.columns.cantidadSolicitada - 1],
+      responsableSolicitud: row[CONFIG.columns.responsableSolicitud - 1],
+      cantidadEntregada: row[CONFIG.columns.cantidadEntregada - 1],
+      responsableEntrega: row[CONFIG.columns.responsableEntrega - 1],
+    });
+    acc[key] = true;
+    return acc;
+  }, {});
 
-  const signaturesByBatch = {};
-
-  rows.forEach((row, index) => {
-    const rowDate = normalizeDate_(row[CONFIG.columns.fecha - 1]);
-    const rowSede = normalizeText_(row[CONFIG.columns.sede - 1]);
-    const rowResponsable = normalizeText_(row[CONFIG.columns.responsableSolicitud - 1]);
-    const qtySolicitada = Number(row[CONFIG.columns.cantidadSolicitada - 1]) || 0;
-
-    if (
-      rowDate !== expectedDate ||
-      rowSede !== expectedSede ||
-      rowResponsable !== expectedResponsable ||
-      qtySolicitada <= 0
-    ) {
-      return;
-    }
-
-    const batchId = getBatchId_(row, index);
-    const code = row[CONFIG.columns.codigo - 1];
-    const unit = row[CONFIG.columns.unidad - 1];
-    const signatureLine = `${normalizeText_(code)}|${normalizeText_(unit)}|${qtySolicitada}`;
-
-    if (!signaturesByBatch[batchId]) {
-      signaturesByBatch[batchId] = [];
-    }
-    signaturesByBatch[batchId].push(signatureLine);
-  });
-
-  return Object.keys(signaturesByBatch).some((batchId) => {
-    const batchSignature = signaturesByBatch[batchId].slice().sort().join('||');
-    return batchSignature === incomingSignature;
+  return items.some((item) => {
+    const incomingKey = buildDuplicateRowKey_({
+      hora: payload.hora,
+      fecha: payload.fecha,
+      codigo: item.code,
+      producto: item.description,
+      sede: payload.sede,
+      cantidadSolicitada: item.quantity,
+      responsableSolicitud: payload.responsable,
+      cantidadEntregada: '',
+      responsableEntrega: '',
+    });
+    return Boolean(existingRowKeys[incomingKey]);
   });
 }
 
@@ -322,49 +312,76 @@ function isEntregaDuplicate_(sheet, payload, items) {
   const rows = getAllDataRows_(sheet);
   if (!rows.length) return false;
 
-  const expectedDate = normalizeDate_(payload.fecha);
-  const expectedSede = normalizeText_(payload.sede);
-  const expectedResponsable = normalizeText_(payload.responsableEntrega);
-  const incomingSignature = items
-    .map(
-      (item) =>
-        `${normalizeText_(item.productCode)}|${normalizeText_(item.unit)}|${Number(item.cantidadEntregada)}`
-    )
-    .sort()
-    .join('||');
+  const existingRowKeys = rows.reduce((acc, row) => {
+    const key = buildDuplicateRowKey_({
+      hora: row[CONFIG.columns.hora - 1],
+      fecha: row[CONFIG.columns.fecha - 1],
+      codigo: row[CONFIG.columns.codigo - 1],
+      producto: row[CONFIG.columns.producto - 1],
+      sede: row[CONFIG.columns.sede - 1],
+      cantidadSolicitada: row[CONFIG.columns.cantidadSolicitada - 1],
+      responsableSolicitud: row[CONFIG.columns.responsableSolicitud - 1],
+      cantidadEntregada: row[CONFIG.columns.cantidadEntregada - 1],
+      responsableEntrega: row[CONFIG.columns.responsableEntrega - 1],
+    });
+    acc[key] = true;
+    return acc;
+  }, {});
 
-  const signaturesByBatch = {};
+  const responsableSolicitudEntrega = payload.sinSolicitud ? 'SIN SOLICITUD' : '';
 
-  rows.forEach((row, index) => {
-    const rowDate = normalizeDate_(row[CONFIG.columns.fecha - 1]);
-    const rowSede = normalizeText_(row[CONFIG.columns.sede - 1]);
-    const rowResponsable = normalizeText_(row[CONFIG.columns.responsableEntrega - 1]);
-    const qtyEntregada = Number(row[CONFIG.columns.cantidadEntregada - 1]) || 0;
-
-    if (
-      rowDate !== expectedDate ||
-      rowSede !== expectedSede ||
-      rowResponsable !== expectedResponsable ||
-      qtyEntregada <= 0
-    ) {
-      return;
-    }
-
-    const batchId = getBatchId_(row, index);
-    const code = row[CONFIG.columns.codigo - 1];
-    const unit = row[CONFIG.columns.unidad - 1];
-    const signatureLine = `${normalizeText_(code)}|${normalizeText_(unit)}|${qtyEntregada}`;
-
-    if (!signaturesByBatch[batchId]) {
-      signaturesByBatch[batchId] = [];
-    }
-    signaturesByBatch[batchId].push(signatureLine);
+  return items.some((item) => {
+    const incomingKey = buildDuplicateRowKey_({
+      hora: payload.hora || '',
+      fecha: payload.fecha,
+      codigo: item.productCode,
+      producto: item.productName,
+      sede: payload.sede,
+      cantidadSolicitada: '',
+      responsableSolicitud: responsableSolicitudEntrega,
+      cantidadEntregada: item.cantidadEntregada,
+      responsableEntrega: payload.responsableEntrega,
+    });
+    return Boolean(existingRowKeys[incomingKey]);
   });
+}
 
-  return Object.keys(signaturesByBatch).some((batchId) => {
-    const batchSignature = signaturesByBatch[batchId].slice().sort().join('||');
-    return batchSignature === incomingSignature;
-  });
+function buildDuplicateRowKey_(record) {
+  return [
+    normalizeHora_(record.hora),
+    normalizeDate_(record.fecha),
+    normalizeText_(record.codigo),
+    normalizeText_(record.producto),
+    normalizeText_(record.sede),
+    normalizeNumber_(record.cantidadSolicitada),
+    normalizeText_(record.responsableSolicitud),
+    normalizeNumber_(record.cantidadEntregada),
+    normalizeText_(record.responsableEntrega),
+  ].join('||');
+}
+
+function normalizeHora_(value) {
+  if (value instanceof Date && !isNaN(value.getTime())) {
+    return Utilities.formatDate(value, CONFIG.timeZone, 'HH:mm');
+  }
+
+  const text = String(value || '').trim();
+  if (!text) return '';
+
+  const match = text.match(/^(\d{1,2}):(\d{2})(?::\d{2})?$/);
+  if (match) {
+    const hh = String(Math.max(0, Math.min(23, Number(match[1])))).padStart(2, '0');
+    const mm = String(Math.max(0, Math.min(59, Number(match[2])))).padStart(2, '0');
+    return `${hh}:${mm}`;
+  }
+
+  return normalizeText_(text);
+}
+
+function normalizeNumber_(value) {
+  const num = Number(value);
+  if (!Number.isFinite(num)) return '';
+  return String(num);
 }
 
 function getAllDataRows_(sheet) {
