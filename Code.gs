@@ -156,27 +156,15 @@ function recordEntrega_(payload) {
   }
 
   sanitizedItems.forEach((item) => {
-    if (payload.sinSolicitud) {
-      appendEntregaSinSolicitud_(
-        sheet,
-        payload,
-        item,
-        item.cantidadEntregada,
-        registroAutomatico,
-        productCatalogByCode,
-        mes
-      );
-    } else {
-      appendEntregaDirecta_(
-        sheet,
-        payload,
-        item,
-        item.cantidadEntregada,
-        registroAutomatico,
-        productCatalogByCode,
-        mes
-      );
-    }
+    appendEntregaDirecta_(
+      sheet,
+      payload,
+      item,
+      item.cantidadEntregada,
+      registroAutomatico,
+      productCatalogByCode,
+      mes
+    );
 
     summary.appended += 1;
     summary.processed += 1;
@@ -229,35 +217,6 @@ function appendEntregaDirecta_(
     payload.sede || '',
     '',
     '',
-    qty,
-    payload.responsableEntrega || '',
-    '',
-    mes,
-    registroAutomatico || new Date(),
-  ];
-  sheet.appendRow(row);
-  return sheet.getLastRow();
-}
-
-function appendEntregaSinSolicitud_(
-  sheet,
-  payload,
-  item,
-  qty,
-  registroAutomatico,
-  productCatalogByCode,
-  mes
-) {
-  const row = [
-    payload.hora || '',
-    payload.fecha || '',
-    getFamiliaByCode_(item.productCode, productCatalogByCode),
-    item.productCode || '',
-    item.unit || '',
-    item.productName || '',
-    payload.sede || '',
-    '',
-    'SIN SOLICITUD',
     qty,
     payload.responsableEntrega || '',
     '',
@@ -328,8 +287,6 @@ function isEntregaDuplicate_(sheet, payload, items) {
     return acc;
   }, {});
 
-  const responsableSolicitudEntrega = payload.sinSolicitud ? 'SIN SOLICITUD' : '';
-
   return items.some((item) => {
     const incomingKey = buildDuplicateRowKey_({
       hora: payload.hora || '',
@@ -338,7 +295,7 @@ function isEntregaDuplicate_(sheet, payload, items) {
       producto: item.productName,
       sede: payload.sede,
       cantidadSolicitada: '',
-      responsableSolicitud: responsableSolicitudEntrega,
+      responsableSolicitud: '',
       cantidadEntregada: item.cantidadEntregada,
       responsableEntrega: payload.responsableEntrega,
     });
