@@ -55,6 +55,7 @@ function init() {
   setupNavigation();
   populateSedeSelects();
   setupHoraAutoForSedes();
+  setupNumeroEntregaForRegistros();
   initSolicitudesForm();
   initRegistrosForm();
   initMermaForm();
@@ -159,6 +160,27 @@ function setupHoraAutoForSedes() {
     applyHoraRule();
     select.dataset.horaBound = 'true';
   });
+}
+
+function setupNumeroEntregaForRegistros() {
+  const form = document.getElementById('registros-form');
+  if (!form) return;
+
+  const sedeSelect = form.querySelector('select[name="sede"]');
+  const numeroEntregaWrap = document.getElementById('registros-numero-entrega-wrap');
+  const numeroEntregaSelect = document.getElementById('registros-numero-entrega');
+  if (!sedeSelect || !numeroEntregaWrap || !numeroEntregaSelect) return;
+
+  const syncVisibility = () => {
+    const isBC = String(sedeSelect.value || '').trim().toUpperCase() === 'BC';
+    numeroEntregaWrap.style.display = isBC ? 'flex' : 'none';
+    if (!isBC) {
+      numeroEntregaSelect.value = '';
+    }
+  };
+
+  sedeSelect.addEventListener('change', syncVisibility);
+  syncVisibility();
 }
 
 function initSolicitudesForm() {
@@ -334,11 +356,13 @@ function initRegistrosForm() {
     }
 
     const sede = formData.get('sede') || '';
+    const numeroEntrega = sede === 'BC' ? String(formData.get('numeroEntrega') || '').trim() : '';
     const payload = {
       fecha: formData.get('fecha') || '',
       hora: isForcedHoraSede(sede) ? FORCED_HORA_VALUE : formData.get('hora') || '',
       sede,
       responsableEntrega: formData.get('responsableEntrega') || '',
+      numeroEntrega,
       items,
     };
 
@@ -350,6 +374,7 @@ function initRegistrosForm() {
         { label: 'Hora', value: payload.hora },
         { label: 'Sede', value: payload.sede },
         { label: 'Responsable entrega', value: payload.responsableEntrega },
+        { label: 'Número de Entrega', value: payload.numeroEntrega || '-' },
       ],
       items: payload.items.map((item) => ({
         code: item.productCode,

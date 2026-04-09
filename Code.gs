@@ -18,6 +18,7 @@ const CONFIG = {
     merma: 12,
     mes: 13,
     timestamp: 14,
+    numeroEntrega: 15,
   },
 };
 
@@ -103,6 +104,7 @@ function createSolicitud_(payload) {
     '',
     mes,
     registroAutomatico,
+    '',
   ]);
 
   sheet.getRange(sheet.getLastRow() + 1, 1, rows.length, rows[0].length).setValues(rows);
@@ -150,6 +152,7 @@ function recordEntrega_(payload) {
   const registroAutomatico = new Date();
   const productCatalogByCode = getProductCatalogByCode_();
   const mes = getMesDesdeFecha_(payload.fecha, registroAutomatico);
+  const numeroEntrega = sanitizeNumeroEntrega_(payload.numeroEntrega);
 
   if (isEntregaDuplicate_(sheet, payload, sanitizedItems)) {
     throw new Error('Esta respuesta ya fue enviada. Verifica antes de reenviar.');
@@ -163,7 +166,8 @@ function recordEntrega_(payload) {
       item.cantidadEntregada,
       registroAutomatico,
       productCatalogByCode,
-      mes
+      mes,
+      numeroEntrega
     );
 
     summary.appended += 1;
@@ -205,7 +209,8 @@ function appendEntregaDirecta_(
   qty,
   registroAutomatico,
   productCatalogByCode,
-  mes
+  mes,
+  numeroEntrega
 ) {
   const row = [
     payload.hora || '',
@@ -222,9 +227,20 @@ function appendEntregaDirecta_(
     '',
     mes,
     registroAutomatico || new Date(),
+    numeroEntrega || '',
   ];
   sheet.appendRow(row);
   return sheet.getLastRow();
+}
+
+function sanitizeNumeroEntrega_(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+  const num = Number(raw);
+  if (!Number.isInteger(num) || num < 1 || num > 10) {
+    throw new Error('Número de Entrega inválido. Debe estar entre 1 y 10.');
+  }
+  return String(num);
 }
 
 function isSolicitudDuplicate_(sheet, payload, items) {
@@ -344,7 +360,7 @@ function normalizeNumber_(value) {
 function getAllDataRows_(sheet) {
   const lastRow = sheet.getLastRow();
   if (lastRow < 2) return [];
-  return sheet.getRange(2, 1, lastRow - 1, 14).getValues();
+  return sheet.getRange(2, 1, lastRow - 1, CONFIG.columns.numeroEntrega).getValues();
 }
 
 function getBatchId_(row, index) {
@@ -375,7 +391,7 @@ function getTailRows_(sheet, count) {
   const totalDataRows = lastRow - 1;
   const rowsToRead = Math.min(count, totalDataRows);
   const startRow = lastRow - rowsToRead + 1;
-  return sheet.getRange(startRow, 1, rowsToRead, 14).getValues();
+  return sheet.getRange(startRow, 1, rowsToRead, CONFIG.columns.numeroEntrega).getValues();
 }
 
 function appendMermaSinSolicitud_(sheet, payload, item, qty, productCatalogByCode, mes) {
@@ -394,6 +410,7 @@ function appendMermaSinSolicitud_(sheet, payload, item, qty, productCatalogByCod
     qty,
     mes,
     new Date(),
+    '',
   ];
   sheet.appendRow(row);
   return sheet.getLastRow();
@@ -441,6 +458,7 @@ function appendMermaDirecta_(sheet, payload, item, qty, registroAutomatico, prod
     qty,
     mes,
     registroAutomatico || new Date(),
+    '',
   ];
   sheet.appendRow(row);
   return sheet.getLastRow();
@@ -596,7 +614,16 @@ function getSpreadsheet_() {
 function getMainSheet_() {
   const sheet = getSpreadsheet_().getSheetByName(CONFIG.mainSheetName);
   if (!sheet) throw new Error('No se encontró la pestaña principal.');
+  ensureMainSheetStructure_(sheet);
   return sheet;
+}
+
+function ensureMainSheetStructure_(sheet) {
+  const headerCell = sheet.getRange(1, CONFIG.columns.numeroEntrega);
+  const headerValue = String(headerCell.getValue() || '').trim();
+  if (!headerValue) {
+    headerCell.setValue('NUMERO DE ENTREGA');
+  }
 }
 
 function withLock_(callback) {
