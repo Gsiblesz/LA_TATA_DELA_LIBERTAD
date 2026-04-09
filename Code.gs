@@ -153,6 +153,10 @@ function recordEntrega_(payload) {
   const productCatalogByCode = getProductCatalogByCode_();
   const mes = getMesDesdeFecha_(payload.fecha, registroAutomatico);
   const numeroEntrega = sanitizeNumeroEntrega_(payload.numeroEntrega);
+  const sede = String(payload.sede || '').trim().toUpperCase();
+  if (sede === 'BC' && !numeroEntrega) {
+    throw new Error('Para la sede BC, el Número de Entrega es obligatorio.');
+  }
 
   if (isEntregaDuplicate_(sheet, payload, sanitizedItems)) {
     throw new Error('Esta respuesta ya fue enviada. Verifica antes de reenviar.');

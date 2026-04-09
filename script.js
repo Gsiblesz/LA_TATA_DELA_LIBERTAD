@@ -174,6 +174,7 @@ function setupNumeroEntregaForRegistros() {
   const syncVisibility = () => {
     const isBC = String(sedeSelect.value || '').trim().toUpperCase() === 'BC';
     numeroEntregaWrap.style.display = isBC ? 'flex' : 'none';
+    numeroEntregaSelect.required = isBC;
     if (!isBC) {
       numeroEntregaSelect.value = '';
     }
@@ -357,6 +358,12 @@ function initRegistrosForm() {
 
     const sede = formData.get('sede') || '';
     const numeroEntrega = sede === 'BC' ? String(formData.get('numeroEntrega') || '').trim() : '';
+    if (sede === 'BC' && !numeroEntrega) {
+      const numeroEntregaSelect = document.getElementById('registros-numero-entrega');
+      numeroEntregaSelect?.focus();
+      showToast('Para la sede BC, el Número de Entrega es obligatorio.', 'error');
+      return;
+    }
     const payload = {
       fecha: formData.get('fecha') || '',
       hora: isForcedHoraSede(sede) ? FORCED_HORA_VALUE : formData.get('hora') || '',
