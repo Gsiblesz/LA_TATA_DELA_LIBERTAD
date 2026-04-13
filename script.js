@@ -41,6 +41,36 @@ const elements = {
 
 let confirmResolver = null;
 
+function createRequestId() {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  return `req-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+function refreshFormRequestId(form) {
+  if (!form) return;
+  form.dataset.requestId = createRequestId();
+}
+
+function getFormRequestId(form) {
+  if (!form) return createRequestId();
+  if (!form.dataset.requestId) {
+    refreshFormRequestId(form);
+  }
+  return form.dataset.requestId;
+}
+
+function setupFormRequestIdTracking(form) {
+  if (!form || form.dataset.requestTrackingBound === 'true') return;
+
+  const updateRequestId = () => refreshFormRequestId(form);
+  form.addEventListener('input', updateRequestId);
+  form.addEventListener('change', updateRequestId);
+  refreshFormRequestId(form);
+  form.dataset.requestTrackingBound = 'true';
+}
+
 const queryAll = (scope, selector) => {
   if (!scope) return [];
   if (typeof scope.querySelectorAll === 'function') {
@@ -188,6 +218,7 @@ function initSolicitudesForm() {
   const form = document.getElementById('solicitudes-form');
   if (!form || !elements.solicitudRows) return;
 
+  setupFormRequestIdTracking(form);
   resetSolicitudRows();
   elements.addSolicitudRowBtn?.addEventListener('click', () => addSolicitudRow());
 
@@ -222,6 +253,7 @@ function initSolicitudesForm() {
       hora: isForcedHoraSede(sede) ? FORCED_HORA_VALUE : formData.get('hora') || '',
       sede,
       responsable: formData.get('responsable') || '',
+      requestId: getFormRequestId(form),
       items,
     };
 
@@ -254,6 +286,7 @@ function initSolicitudesForm() {
       showToast('Solicitud de sede registrada correctamente.', 'success');
       form.reset();
       resetSolicitudRows();
+      refreshFormRequestId(form);
     } catch (error) {
       showToast(error.message || 'Error al registrar la solicitud de sede.', 'error');
     } finally {
@@ -328,6 +361,7 @@ function initRegistrosForm() {
   const form = document.getElementById('registros-form');
   if (!form || !elements.registroRows) return;
 
+  setupFormRequestIdTracking(form);
   resetRegistroRows();
   elements.addRegistroRowBtn?.addEventListener('click', () => addRegistroRow());
 
@@ -370,6 +404,7 @@ function initRegistrosForm() {
       sede,
       responsableEntrega: formData.get('responsableEntrega') || '',
       numeroEntrega,
+      requestId: getFormRequestId(form),
       items,
     };
 
@@ -403,6 +438,7 @@ function initRegistrosForm() {
       showToast('Entregado a Sedes procesado.', 'success');
       form.reset();
       resetRegistroRows();
+      refreshFormRequestId(form);
     } catch (error) {
       showToast(error.message || 'Error al registrar la entrega.', 'error');
     } finally {
@@ -467,6 +503,7 @@ function initMermaForm() {
   const form = document.getElementById('merma-form');
   if (!form || !elements.mermaRows) return;
 
+  setupFormRequestIdTracking(form);
   resetMermaRows();
   elements.addMermaRowBtn?.addEventListener('click', () => addMermaRow());
 
@@ -501,6 +538,7 @@ function initMermaForm() {
       hora: isForcedHoraSede(sede) ? FORCED_HORA_VALUE : formData.get('hora') || '',
       sede,
       responsable: formData.get('responsable') || '',
+      requestId: getFormRequestId(form),
       items,
     };
 
@@ -510,6 +548,7 @@ function initMermaForm() {
       showToast(`Producción registrada para ${payload.sede}.`, 'success');
       form.reset();
       resetMermaRows();
+      refreshFormRequestId(form);
     } catch (error) {
       showToast(error.message || 'Error al registrar la producción.', 'error');
     } finally {
@@ -767,7 +806,7 @@ function initCatalogView() {
     renderCatalog(filtered);
   });
 
-  elements.refreshCatalogBtn?.addEventListener('click', () => fetchProducts(true));
+  elements.refreshCatalogBtn?.addEventListener('click', () => fetchProducts(true, true));
 }
 
 function loadCatalogFromCache() {
@@ -798,7 +837,7 @@ function parseIntegerQuantity(value) {
   return parsed;
 }
 
-async function fetchProducts(showToastOnSuccess = false) {
+async function fetchProducts(showToastOnSuccess = false, forceRefresh = false) {
   if (!APPS_SCRIPT_URL) {
     setCatalogStatus('Configura la URL del Apps Script.', true);
     return;
@@ -807,7 +846,10 @@ async function fetchProducts(showToastOnSuccess = false) {
   setCatalogStatus('Sincronizando catálogo...', false);
 
   try {
-    const response = await fetch(`${APPS_SCRIPT_URL}?action=getProducts`, { cache: 'no-store' });
+    const forceQuery = forceRefresh ? '&force=1' : '';
+    const response = await fetch(`${APPS_SCRIPT_URL}?action=getProducts${forceQuery}`, {
+      cache: 'no-store',
+    });
     const data = await readResponseData(response);
     if (!data.success) {
       throw new Error(data.message || 'No se pudo sincronizar el catálogo.');

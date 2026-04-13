@@ -3,6 +3,10 @@ const CONFIG = {
   mainSheetName: 'DATA',
   catalogSheetName: 'PRODUCTOS',
   timeZone: Session.getScriptTimeZone() || 'America/Caracas',
+  lockWaitMs: 5000,
+  duplicateLookbackRows: 600,
+  requestCacheTtlSeconds: 21600,
+  catalogCacheTtlSeconds: 300,
   columns: {
     hora: 1,
     fecha: 2,
@@ -31,7 +35,7 @@ function doGet(e) {
     }
 
     if (action === 'getproducts') {
-      const products = getProducts_();
+      const products = getProducts_({ bypassCache: String(e?.parameter?.force || '') === '1' });
       return buildResponse_(true, { products }, 'Catálogo sincronizado.');
     }
 
@@ -49,10 +53,66 @@ function doPost(e) {
   try {
     const { action, payload } = parseBody_(e);
     const normalizedAction = String(action || '').toLowerCase();
-    const result = withLock_(() => handleAction_(normalizedAction, payload || {}));
+    const safePayload = payload || {};
+    const result = withLock_(() =>
+      withRequestDedup_(normalizedAction, safePayload, () =>
+        handleAction_(normalizedAction, safePayload)
+      )
+    );
     return buildResponse_(true, result.data, result.message);
   } catch (error) {
     return buildResponse_(false, null, normalizeAppErrorMessage_(error));
+  }
+}
+
+function withRequestDedup_(action, payload, callback) {
+  const requestId = sanitizeRequestId_(payload?.requestId);
+  if (!requestId) {
+    return callback();
+  }
+
+  const cachedResult = getProcessedRequest_(action, requestId);
+  if (cachedResult) {
+    return cachedResult;
+  }
+
+  const result = callback();
+  rememberProcessedRequest_(action, requestId, result);
+  return result;
+}
+
+function sanitizeRequestId_(value) {
+  const text = String(value || '').trim();
+  if (!text) return '';
+  if (text.length > 120) return '';
+  if (!/^[a-zA-Z0-9_\-:.]+$/.test(text)) return '';
+  return text;
+}
+
+function getRequestCacheKey_(action, requestId) {
+  return `req:${String(action || '').toLowerCase()}:${requestId}`;
+}
+
+function getProcessedRequest_(action, requestId) {
+  try {
+    const key = getRequestCacheKey_(action, requestId);
+    const raw = CacheService.getScriptCache().get(key);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch (error) {
+    return null;
+  }
+}
+
+function rememberProcessedRequest_(action, requestId, result) {
+  try {
+    const key = getRequestCacheKey_(action, requestId);
+    CacheService.getScriptCache().put(
+      key,
+      JSON.stringify(result),
+      CONFIG.requestCacheTtlSeconds
+    );
+  } catch (error) {
   }
 }
 
@@ -162,9 +222,8 @@ function recordEntrega_(payload) {
     throw new Error('Esta respuesta ya fue enviada. Verifica antes de reenviar.');
   }
 
-  sanitizedItems.forEach((item) => {
-    appendEntregaDirecta_(
-      sheet,
+  const rows = sanitizedItems.map((item) =>
+    buildEntregaRow_(
       payload,
       item,
       item.cantidadEntregada,
@@ -172,13 +231,42 @@ function recordEntrega_(payload) {
       productCatalogByCode,
       mes,
       numeroEntrega
-    );
+    )
+  );
 
-    summary.appended += 1;
-    summary.processed += 1;
-  });
+  batchAppendRows_(sheet, rows);
+  summary.appended = rows.length;
+  summary.processed = rows.length;
 
   return summary;
+}
+
+function buildEntregaRow_(
+  payload,
+  item,
+  qty,
+  registroAutomatico,
+  productCatalogByCode,
+  mes,
+  numeroEntrega
+) {
+  return [
+    payload.hora || '',
+    payload.fecha || '',
+    getFamiliaByCode_(item.productCode, productCatalogByCode),
+    item.productCode || '',
+    item.unit || '',
+    item.productName || '',
+    payload.sede || '',
+    '',
+    '',
+    qty,
+    payload.responsableEntrega || '',
+    '',
+    mes,
+    registroAutomatico || new Date(),
+    numeroEntrega || '',
+  ];
 }
 
 function sanitizeEntregaItems_(items) {
@@ -250,7 +338,7 @@ function sanitizeNumeroEntrega_(value) {
 function isSolicitudDuplicate_(sheet, payload, items) {
   if (!sheet || !items.length) return false;
 
-  const rows = getAllDataRows_(sheet);
+  const rows = getTailRows_(sheet, CONFIG.duplicateLookbackRows);
   if (!rows.length) return false;
 
   const existingRowKeys = rows.reduce((acc, row) => {
@@ -288,7 +376,7 @@ function isSolicitudDuplicate_(sheet, payload, items) {
 function isEntregaDuplicate_(sheet, payload, items) {
   if (!sheet || !items.length) return false;
 
-  const rows = getAllDataRows_(sheet);
+  const rows = getTailRows_(sheet, CONFIG.duplicateLookbackRows);
   if (!rows.length) return false;
 
   const existingRowKeys = rows.reduce((acc, row) => {
@@ -427,27 +515,51 @@ function recordMerma_(payload) {
     throw new Error('Debes enviar al menos un producto.');
   }
 
+  const sanitizedItems = sanitizeMermaItems_(items);
   const sheet = getMainSheet_();
   const summary = { processed: 0, updated: 0, appended: 0 };
   const registroAutomatico = new Date();
   const productCatalogByCode = getProductCatalogByCode_();
   const mes = getMesDesdeFecha_(payload.fecha, registroAutomatico);
-  items.forEach((item) => {
-    const qty = Number(item.cantidadMerma) || 0;
-    if (qty <= 0) {
-      throw new Error(`La merma debe ser mayor a cero (${item.productCode || 'sin código'}).`);
-    }
 
-    appendMermaDirecta_(sheet, payload, item, qty, registroAutomatico, productCatalogByCode, mes);
-    summary.appended += 1;
-    summary.processed += 1;
-  });
+  const rows = sanitizedItems.map((item) =>
+    buildMermaRow_(payload, item, item.cantidadMerma, registroAutomatico, productCatalogByCode, mes)
+  );
+
+  batchAppendRows_(sheet, rows);
+  summary.appended = rows.length;
+  summary.processed = rows.length;
 
   return summary;
 }
 
-function appendMermaDirecta_(sheet, payload, item, qty, registroAutomatico, productCatalogByCode, mes) {
-  const row = [
+function sanitizeMermaItems_(items) {
+  return items.map((item, index) => {
+    const productCode = String(item.productCode || '').trim();
+    const productName = String(item.productName || '').trim();
+    const unit = String(item.unit || '').trim();
+    const cantidadMerma = Number(item.cantidadMerma);
+    const label = productCode || productName || `#${index + 1}`;
+
+    if (!productCode) {
+      throw new Error(`El producto ${label} necesita un código.`);
+    }
+    if (!productName) {
+      throw new Error(`El producto ${label} necesita una descripción.`);
+    }
+    if (!unit) {
+      throw new Error(`La unidad del producto ${label} es obligatoria.`);
+    }
+    if (!Number.isFinite(cantidadMerma) || cantidadMerma <= 0) {
+      throw new Error(`La merma debe ser mayor a cero (${label}).`);
+    }
+
+    return { productCode, productName, unit, cantidadMerma };
+  });
+}
+
+function buildMermaRow_(payload, item, qty, registroAutomatico, productCatalogByCode, mes) {
+  return [
     payload.hora || '',
     payload.fecha || '',
     getFamiliaByCode_(item.productCode, productCatalogByCode),
@@ -464,16 +576,35 @@ function appendMermaDirecta_(sheet, payload, item, qty, registroAutomatico, prod
     registroAutomatico || new Date(),
     '',
   ];
-  sheet.appendRow(row);
-  return sheet.getLastRow();
 }
 
-function getProducts_() {
+function batchAppendRows_(sheet, rows) {
+  if (!sheet || !Array.isArray(rows) || !rows.length) return;
+  const startRow = sheet.getLastRow() + 1;
+  sheet.getRange(startRow, 1, rows.length, rows[0].length).setValues(rows);
+}
+
+function getProducts_(options) {
+  const bypassCache = Boolean(options?.bypassCache);
+  const cacheKey = 'products-catalog-v1';
+  if (!bypassCache) {
+    try {
+      const cached = CacheService.getScriptCache().get(cacheKey);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed)) {
+          return parsed;
+        }
+      }
+    } catch (error) {
+    }
+  }
+
   const sheet = getSpreadsheet_().getSheetByName(CONFIG.catalogSheetName);
   if (!sheet) throw new Error('No se encontró la pestaña PRODUCTOS.');
   const values = sheet.getDataRange().getValues();
   const [, ...rows] = values;
-  return rows
+  const products = rows
     .filter((row) => row[0] && row[1])
     .map((row) => ({
       code: String(row[0]).trim(),
@@ -481,6 +612,17 @@ function getProducts_() {
       unit: String(row[2] || '').trim() || 'UND',
       family: String(row[3] || '').trim(),
     }));
+
+  try {
+    CacheService.getScriptCache().put(
+      cacheKey,
+      JSON.stringify(products),
+      CONFIG.catalogCacheTtlSeconds
+    );
+  } catch (error) {
+  }
+
+  return products;
 }
 
 function getProductCatalogByCode_() {
@@ -632,7 +774,10 @@ function ensureMainSheetStructure_(sheet) {
 
 function withLock_(callback) {
   const lock = getSafeLock_();
-  lock.waitLock(20000);
+  const acquired = lock.tryLock(CONFIG.lockWaitMs);
+  if (!acquired) {
+    throw new Error('Hay muchas solicitudes en curso. Intenta nuevamente en 5 segundos.');
+  }
   try {
     return callback();
   } finally {
