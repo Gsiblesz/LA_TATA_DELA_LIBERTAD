@@ -282,8 +282,8 @@ function initSolicitudesForm() {
 
     try {
       toggleFormLoading(form, true);
-      await postData('createSolicitud', payload);
-      showToast('Solicitud de sede registrada correctamente.', 'success');
+      const response = await postData('createSolicitud', payload);
+      showSubmissionLogToast_('Solicitud de sede registrada correctamente.', response?.data);
       form.reset();
       resetSolicitudRows();
       refreshFormRequestId(form);
@@ -434,8 +434,8 @@ function initRegistrosForm() {
 
     try {
       toggleFormLoading(form, true);
-      await postData('recordEntrega', payload);
-      showToast('Entregado a Sedes procesado.', 'success');
+      const response = await postData('recordEntrega', payload);
+      showSubmissionLogToast_('Entregado a Sedes procesado.', response?.data);
       form.reset();
       resetRegistroRows();
       refreshFormRequestId(form);
@@ -979,6 +979,26 @@ function setCatalogStatus(message, isError) {
 function toggleEnvWarning(show) {
   if (!elements.envWarning) return;
   elements.envWarning.classList.toggle('hidden', !show);
+}
+
+function showSubmissionLogToast_(defaultMessage, responseData) {
+  const logEmail = responseData?.logEmail;
+  if (!logEmail || logEmail.enabled !== true) {
+    showToast(defaultMessage, 'success');
+    return;
+  }
+
+  if (logEmail.sent) {
+    if (logEmail.mode === 'fallback_inline_json') {
+      showToast(`${defaultMessage} Log enviado por correo (modo inline).`, 'success');
+      return;
+    }
+    showToast(defaultMessage, 'success');
+    return;
+  }
+
+  const errorText = String(logEmail.error || 'No se pudo enviar el correo log.').trim();
+  showToast(`${defaultMessage} Pero falló el correo log: ${errorText}`, 'error');
 }
 
 let toastTimeout;

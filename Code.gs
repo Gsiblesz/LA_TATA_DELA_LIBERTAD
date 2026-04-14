@@ -717,6 +717,10 @@ function diagnoseAccess_() {
     },
     canWriteMainSheet: false,
     writeError: '',
+    emailLogsEnabled: Boolean(CONFIG.emailLogs?.enabled),
+    emailRecipients: getEmailRecipients_(),
+    remainingEmailQuota: null,
+    emailQuotaError: '',
   };
 
   try {
@@ -753,6 +757,12 @@ function diagnoseAccess_() {
   } catch (error) {
     report.canWriteMainSheet = false;
     report.writeError = String(error && error.message ? error.message : error || 'Error de escritura desconocido.');
+  }
+
+  try {
+    report.remainingEmailQuota = MailApp.getRemainingDailyQuota();
+  } catch (error) {
+    report.emailQuotaError = String(error && error.message ? error.message : error || 'No se pudo consultar la cuota de correo.');
   }
 
   return report;
@@ -914,21 +924,41 @@ function sendSubmissionLogEmail_(sectionName, payload, resultData) {
       buildSubmissionLogFileName_(sectionName, now)
     );
 
-    MailApp.sendEmail({
+    const mailOptions = {
       to: recipients.join(','),
       subject,
       body,
       name: String(CONFIG.emailLogs?.senderName || 'Apps Script'),
       attachments: [attachment],
-    });
+    };
 
-    return { enabled: true, sent: true, recipients };
+    try {
+      MailApp.sendEmail(mailOptions);
+      return { enabled: true, sent: true, recipients, mode: 'with_attachment' };
+    } catch (attachmentError) {
+      // Fallback: si falla adjunto, intentar un correo de texto para no perder el log.
+      const fallbackBody = `${body}\n\nLOG JSON (inline):\n${JSON.stringify(logPayload, null, 2)}`;
+      MailApp.sendEmail({
+        to: recipients.join(','),
+        subject: `${subject} [inline]`,
+        body: fallbackBody,
+        name: String(CONFIG.emailLogs?.senderName || 'Apps Script'),
+      });
+      return {
+        enabled: true,
+        sent: true,
+        recipients,
+        mode: 'fallback_inline_json',
+        warning: String(attachmentError && attachmentError.message ? attachmentError.message : attachmentError || 'No se pudo adjuntar el JSON.'),
+      };
+    }
   } catch (error) {
     return {
       enabled: true,
       sent: false,
       recipients,
       error: String(error && error.message ? error.message : error || 'mail_error'),
+      hint: buildEmailFailureHint_(),
     };
   }
 }
@@ -949,6 +979,13 @@ function buildSubmissionLogFileName_(sectionName, dateObj) {
 
   const stamp = Utilities.formatDate(dateObj || new Date(), CONFIG.timeZone, 'yyyyMMdd-HHmmss');
   return `log-${safeSection}-${stamp}.json`;
+}
+
+function buildEmailFailureHint_() {
+  return (
+    'Verifica en Apps Script: 1) Ejecuta manualmente una función para autorizar MailApp. ' +
+    '2) Re-despliega el Web App después de cambios. 3) Revisa cuota diaria con action=diagnose.'
+  );
 }
 
 function buildResponse_(success, data, message) {
