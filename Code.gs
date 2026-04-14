@@ -7,6 +7,11 @@ const CONFIG = {
   duplicateLookbackRows: 600,
   requestCacheTtlSeconds: 21600,
   catalogCacheTtlSeconds: 300,
+  emailLogs: {
+    enabled: true,
+    recipients: ['juliosanchez20111@gmail.com'],
+    senderName: 'PDT · Solicitudes y Entregas',
+  },
   columns: {
     hora: 1,
     fecha: 2,
@@ -168,7 +173,13 @@ function createSolicitud_(payload) {
   ]);
 
   sheet.getRange(sheet.getLastRow() + 1, 1, rows.length, rows[0].length).setValues(rows);
-  return { rowsInserted: rows.length };
+
+  const logEmail = sendSubmissionLogEmail_('Solicitudes de Sedes', payload, {
+    rowsInserted: rows.length,
+    items: sanitizedItems,
+  });
+
+  return { rowsInserted: rows.length, logEmail };
 }
 
 function sanitizeSolicitudItems_(items) {
@@ -237,6 +248,12 @@ function recordEntrega_(payload) {
   batchAppendRows_(sheet, rows);
   summary.appended = rows.length;
   summary.processed = rows.length;
+  summary.logEmail = sendSubmissionLogEmail_('Entregado a Sedes', payload, {
+    processed: summary.processed,
+    appended: summary.appended,
+    numeroEntrega,
+    items: sanitizedItems,
+  });
 
   return summary;
 }
@@ -859,6 +876,79 @@ function normalizeAppErrorMessage_(error) {
   }
 
   return rawMessage;
+}
+
+function sendSubmissionLogEmail_(sectionName, payload, resultData) {
+  const recipients = getEmailRecipients_();
+  if (!CONFIG.emailLogs?.enabled || !recipients.length) {
+    return { enabled: false, sent: false, reason: 'disabled_or_no_recipients' };
+  }
+
+  try {
+    const now = new Date();
+    const sede = String(payload?.sede || 'SIN SEDE').trim() || 'SIN SEDE';
+    const fecha = String(payload?.fecha || '').trim() || '-';
+    const timestampText = Utilities.formatDate(now, CONFIG.timeZone, 'yyyy-MM-dd HH:mm:ss');
+
+    const logPayload = {
+      section: sectionName,
+      generatedAt: timestampText,
+      spreadsheetId: CONFIG.spreadsheetId,
+      payload: payload || {},
+      result: resultData || {},
+    };
+
+    const subject = `[PAN DE TATA] ${sectionName} | ${sede} | ${fecha}`;
+    const body = [
+      `Se registró un envío en: ${sectionName}`,
+      `Sede: ${sede}`,
+      `Fecha: ${fecha}`,
+      `Generado: ${timestampText}`,
+      '',
+      'Se adjunta archivo JSON con el detalle completo del registro.',
+    ].join('\n');
+
+    const attachment = Utilities.newBlob(
+      JSON.stringify(logPayload, null, 2),
+      'application/json',
+      buildSubmissionLogFileName_(sectionName, now)
+    );
+
+    MailApp.sendEmail({
+      to: recipients.join(','),
+      subject,
+      body,
+      name: String(CONFIG.emailLogs?.senderName || 'Apps Script'),
+      attachments: [attachment],
+    });
+
+    return { enabled: true, sent: true, recipients };
+  } catch (error) {
+    return {
+      enabled: true,
+      sent: false,
+      recipients,
+      error: String(error && error.message ? error.message : error || 'mail_error'),
+    };
+  }
+}
+
+function getEmailRecipients_() {
+  const raw = CONFIG.emailLogs?.recipients;
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((item) => String(item || '').trim())
+    .filter((item) => item && item.includes('@'));
+}
+
+function buildSubmissionLogFileName_(sectionName, dateObj) {
+  const safeSection = String(sectionName || 'registro')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '') || 'registro';
+
+  const stamp = Utilities.formatDate(dateObj || new Date(), CONFIG.timeZone, 'yyyyMMdd-HHmmss');
+  return `log-${safeSection}-${stamp}.json`;
 }
 
 function buildResponse_(success, data, message) {
