@@ -9,7 +9,7 @@ const CONFIG = {
   catalogCacheTtlSeconds: 300,
   emailLogs: {
     enabled: true,
-    recipients: ['juliosanchez20111@gmail.com'],
+    recipients: ['gvelazquez2003@gmail.com'],
     senderName: 'PDT · Solicitudes y Entregas',
   },
   columns: {
