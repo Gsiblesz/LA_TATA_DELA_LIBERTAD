@@ -7,9 +7,6 @@ Sigue estos pasos para conectar los formularios con el Google Sheets mostrado en
 3. Guarda el proyecto, asígnale un nombre (por ejemplo `formularios-latata`) y presiona **Deploy → New deployment**.
 4. Selecciona **Web app**, elige *Anyone* o *Anyone with the link* para permitir que Vercel acceda, y copia la URL pública.
 5. Sustituye la constante `window.APPS_SCRIPT_URL` en `index.html` con la URL copiada.
-6. Autoriza permisos de `MailApp` cuando Apps Script lo solicite (se usa para enviar logs por correo en Solicitudes y Entregado).
-
-> Destinatarios de correo: en `Code.gs` usa `CONFIG.emailLogs.recipients` para definir uno o varios emails.
 
 > Si actualizas el script en el futuro, recuerda crear un nuevo deployment o actualizar el existente para que mantenga la misma URL.
 

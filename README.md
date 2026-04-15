@@ -37,12 +37,6 @@ Implementación estática (HTML/CSS/JS) para administrar los formularios de **So
 - **Merma de Producción**: busca la fila correspondiente (Fecha + Sede + Producto) y actualiza únicamente la columna `MERMA`. Actualmente solo están habilitadas las sedes `BC` y `LPG`.
 - **Catálogo**: consulta la pestaña `PRODUCTOS` del Sheets y permite filtrar por código o descripción. Los datos se guardan en `localStorage` para cargar más rápido sin conexión.
 
-## Alertas por correo (log por envío)
-
-- Cada envío exitoso en **Solicitudes de Sedes** y **Entregado a Sedes** dispara un correo automático con un archivo adjunto `.json` con el detalle del registro.
-- El correo se configura en `Code.gs` dentro de `CONFIG.emailLogs.recipients`.
-- Si quieres cambiar o agregar destinatarios, modifica ese arreglo y vuelve a desplegar el Apps Script.
-
 ## Despliegue en Vercel
 
 1. Crea un nuevo proyecto en Vercel apuntando a este repositorio/carpeta.
