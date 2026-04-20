@@ -875,7 +875,7 @@ function parseQuantityByProduct(value, product, quantityLabel) {
 
   if (isDecimalCommaProduct(product)) {
     if (raw.includes('.')) {
-      throw new Error('Ingresa la cantidad decimal seguida de (.).');
+      throw new Error('Ingresa la cantidad decimal seguida de (,).');
     }
 
     if (!/^\d+(,\d+)?$/.test(raw)) {
