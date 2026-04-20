@@ -8,6 +8,17 @@ const MERMA_SEDES = ['BC', 'LPG'];
 const FORCED_HORA_SEDES = ['BC', 'PB-2', 'VM'];
 const FORCED_HORA_VALUE = '09:00';
 const STORAGE_KEY = 'latata-catalog-v1';
+const DECIMAL_COMMA_PRODUCT_CODES = new Set([
+  'MDMP0234',
+  'STMP0014',
+  'STMZ0004',
+  'STMZ0014',
+  'STMA0081',
+  'STMZ0026',
+  'STMZ0027',
+  'STMZ0082',
+  'STMZ0084',
+]);
 
 const state = {
   products: [],
@@ -270,7 +281,7 @@ function initSolicitudesForm() {
         code: item.code,
         description: item.description,
         unit: item.unit,
-        quantity: item.quantity,
+        quantity: item.quantityDisplay || item.quantity,
       })),
       quantityLabel: 'Cantidad solicitada',
     });
@@ -331,7 +342,7 @@ function addSolicitudRow() {
     </label>
     <label>
       <span>Cantidad solicitada</span>
-      <input type="number" min="0" step="1" value="1" required />
+      <input type="text" inputmode="numeric" data-role="quantity-input" value="1" required />
     </label>
     <div class="product-row__actions">
       <span class="unit-badge" data-unit>--</span>
@@ -422,7 +433,7 @@ function initRegistrosForm() {
         code: item.productCode,
         description: item.productName,
         unit: item.unit,
-        quantity: item.cantidadEntregada,
+        quantity: item.quantityDisplay || item.cantidadEntregada,
       })),
       quantityLabel: 'Cantidad entregada',
     });
@@ -468,7 +479,7 @@ function addRegistroRow() {
     </label>
     <label>
       <span>Cantidad entregada</span>
-      <input type="number" min="0" step="1" value="1" required />
+      <input type="text" inputmode="numeric" data-role="quantity-input" value="1" required />
     </label>
     <div class="product-row__actions">
       <span class="unit-badge" data-unit>--</span>
@@ -578,7 +589,7 @@ function addMermaRow() {
     </label>
     <label>
       <span>Cantidad producida</span>
-      <input type="number" min="0" step="1" value="1" required />
+      <input type="text" inputmode="numeric" data-role="quantity-input" value="1" required />
     </label>
     <div class="product-row__actions">
       <span class="unit-badge" data-unit>--</span>
@@ -615,6 +626,7 @@ function setupProductCombos(scope = document) {
     if (!input || input.dataset.comboBound === 'true') return;
     const hiddenInput = input.parentElement?.querySelector('[data-role="product-value"]');
     const unitOutput = input.parentElement?.querySelector('[data-unit-output]');
+    const getRow = () => input.closest('.product-row');
     const getBadge = () => input.closest('.product-row')?.querySelector('[data-unit]');
 
     const clearSelection = () => {
@@ -623,6 +635,7 @@ function setupProductCombos(scope = document) {
       if (unitOutput) unitOutput.textContent = 'Unidad: --';
       const badge = getBadge();
       if (badge) badge.textContent = '--';
+      setQuantityInputMode(getRow(), null);
     };
 
     const commitSelection = () => {
@@ -637,6 +650,7 @@ function setupProductCombos(scope = document) {
       if (unitOutput) unitOutput.textContent = `Unidad: ${product.unit}`;
       const badge = getBadge();
       if (badge) badge.textContent = product.unit;
+      setQuantityInputMode(getRow(), product);
       return product;
     };
 
@@ -665,6 +679,25 @@ function updateRowUnit(row) {
   const unitLabel = product?.unit || '--';
   if (badge) badge.textContent = unitLabel;
   if (unitHint) unitHint.textContent = `Unidad: ${unitLabel}`;
+  setQuantityInputMode(row, product);
+}
+
+function isDecimalCommaProduct(codeOrProduct) {
+  const code =
+    typeof codeOrProduct === 'string'
+      ? codeOrProduct
+      : String(codeOrProduct?.code || '').trim();
+  return DECIMAL_COMMA_PRODUCT_CODES.has(String(code || '').trim().toUpperCase());
+}
+
+function setQuantityInputMode(row, product) {
+  const quantityInput = row?.querySelector('[data-role="quantity-input"]');
+  if (!quantityInput) return;
+
+  const decimalMode = isDecimalCommaProduct(product);
+  quantityInput.dataset.quantityMode = decimalMode ? 'decimal-comma' : 'integer';
+  quantityInput.inputMode = decimalMode ? 'decimal' : 'numeric';
+  quantityInput.placeholder = decimalMode ? '0,0' : '1';
 }
 
 function getProductFromInput(input) {
@@ -719,7 +752,12 @@ function syncProductCombosState() {
         if (unitOutput) unitOutput.textContent = `Unidad: ${product.unit}`;
         const badge = input.closest('.product-row')?.querySelector('[data-unit]');
         if (badge) badge.textContent = product.unit;
+        setQuantityInputMode(input.closest('.product-row'), product);
+      } else {
+        setQuantityInputMode(input.closest('.product-row'), null);
       }
+    } else {
+      setQuantityInputMode(input.closest('.product-row'), null);
     }
   });
 }
@@ -776,20 +814,24 @@ function collectItems(container, quantityLabel, mapper) {
   const items = [];
   for (const row of rows) {
     const combo = row.querySelector('[data-role="product-combo"]');
-    const quantityInput = row.querySelector('input[type="number"]');
+    const quantityInput = row.querySelector('[data-role="quantity-input"]');
     const product = getProductFromInput(combo);
     if (!product) {
       combo?.focus?.();
       throw new Error('Selecciona un producto del catálogo en cada fila.');
     }
 
-    const quantity = parseIntegerQuantity(quantityInput?.value);
-    if (quantity === null) {
+    let parsedQuantity;
+    try {
+      parsedQuantity = parseQuantityByProduct(quantityInput?.value, product, quantityLabel);
+    } catch (error) {
       quantityInput?.focus();
-      throw new Error(`La ${quantityLabel} debe ser un número entero mayor o igual a 0.`);
+      throw error;
     }
 
-    items.push(mapper(product, quantity));
+    const mapped = mapper(product, parsedQuantity.value);
+    mapped.quantityDisplay = parsedQuantity.display;
+    items.push(mapped);
   }
 
   return items;
@@ -825,16 +867,43 @@ function loadCatalogFromCache() {
   }
 }
 
-function parseIntegerQuantity(value) {
+function parseQuantityByProduct(value, product, quantityLabel) {
   const raw = typeof value === 'number' ? value.toString() : String(value ?? '').trim();
   if (raw === '') {
-    return null;
+    throw new Error(`La ${quantityLabel} es obligatoria.`);
   }
+
+  if (isDecimalCommaProduct(product)) {
+    if (raw.includes('.')) {
+      throw new Error('Ingresa la cantidad decimal seguida de (.).');
+    }
+
+    if (!/^\d+(,\d+)?$/.test(raw)) {
+      throw new Error(
+        `La ${quantityLabel} de ${product.code} debe ser un número válido (usa coma para decimales).`
+      );
+    }
+
+    const parsedDecimal = Number(raw.replace(',', '.'));
+    if (!Number.isFinite(parsedDecimal) || parsedDecimal < 0) {
+      throw new Error(`La ${quantityLabel} de ${product.code} debe ser mayor o igual a 0.`);
+    }
+
+    return {
+      value: parsedDecimal,
+      display: raw,
+    };
+  }
+
   const parsed = Number(raw);
   if (!Number.isFinite(parsed) || !Number.isInteger(parsed) || parsed < 0) {
-    return null;
+    throw new Error(`La ${quantityLabel} debe ser un número entero mayor o igual a 0.`);
   }
-  return parsed;
+
+  return {
+    value: parsed,
+    display: String(parsed),
+  };
 }
 
 async function fetchProducts(showToastOnSuccess = false, forceRefresh = false) {
