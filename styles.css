@@ -178,6 +178,45 @@ p {
     0 10px 22px rgba(62, 42, 22, 0.08);
 }
 
+.operations-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  background: linear-gradient(180deg, rgba(255, 253, 248, 0.98) 0%, rgba(248, 243, 233, 0.98) 100%);
+}
+
+.operations-card > div:first-child h3 {
+  color: var(--pdt-black);
+}
+
+.operations-card__columns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.5rem;
+}
+
+.operations-card__columns h4 {
+  margin: 0 0 0.4rem;
+  color: var(--pdt-brown-dark);
+}
+
+.operations-card__list {
+  margin: 0;
+  padding-left: 1.25rem;
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.operations-card__list li {
+  color: var(--text);
+}
+
+.operations-card .muted {
+  text-align: left;
+}
+
 .card {
   background: linear-gradient(180deg, rgba(255, 253, 248, 0.98) 0%, rgba(248, 243, 233, 0.96) 100%);
   border-radius: 20px;
