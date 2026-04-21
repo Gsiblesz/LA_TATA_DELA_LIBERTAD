@@ -75,6 +75,26 @@ p {
   gap: 2rem;
   box-shadow: 14px 0 36px rgba(62, 42, 22, 0.08);
   border-right: 1px solid rgba(192, 110, 50, 0.16);
+  position: sticky;
+  top: 0;
+  align-self: flex-start;
+  min-height: 100vh;
+}
+
+.brand__logo {
+  width: 92px;
+  height: 92px;
+  object-fit: contain;
+  align-self: flex-start;
+  margin-bottom: 0.25rem;
+  flex: 0 0 auto;
+}
+
+.brand {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding-top: 0.15rem;
 }
 
 .brand h1 {
@@ -788,6 +808,8 @@ code {
     width: 100%;
     border-bottom-left-radius: 30px;
     border-bottom-right-radius: 30px;
+    position: static;
+    min-height: auto;
   }
 
   .main {
