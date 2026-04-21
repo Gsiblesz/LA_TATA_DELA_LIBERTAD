@@ -149,79 +149,33 @@ p {
 }
 
 .hero-card {
-  background: linear-gradient(135deg, #1a1512 0%, #000000 48%, #0d0a08 100%);
-  color: var(--pdt-cream);
+  background: linear-gradient(180deg, rgba(255, 253, 248, 0.98) 0%, rgba(248, 243, 233, 0.98) 100%);
+  color: var(--pdt-black);
   padding: 2rem;
   border-radius: 24px;
   display: flex;
   gap: 2rem;
   justify-content: space-between;
-  border: 1px solid rgba(192, 110, 50, 0.35);
+  border: 1px solid rgba(217, 200, 171, 0.95);
   box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.06) inset,
-    0 16px 36px rgba(0, 0, 0, 0.22);
+    0 1px 0 rgba(255, 255, 255, 0.78) inset,
+    0 16px 36px rgba(62, 42, 22, 0.1);
 }
 
 .hero-card__description {
-  color: rgba(248, 243, 233, 0.9);
+  color: rgba(17, 17, 17, 0.78);
   max-width: 540px;
 }
 
 .hero-card__cta {
-  background: rgba(255, 253, 248, 0.06);
+  background: linear-gradient(180deg, #fff8ef 0%, #f5ebdd 100%);
   border-radius: 18px;
   padding: 1.5rem;
   max-width: 360px;
-  border: 1px solid rgba(192, 110, 50, 0.24);
-}
-
-.operations-card {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.operations-card__columns {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 1.5rem;
-}
-
-.operations-card__columns h4 {
-  margin: 0 0 0.4rem;
-  color: var(--brand-dark);
-}
-
-.operations-card__list {
-  margin: 0;
-  padding-left: 1.25rem;
-  color: var(--text);
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-}
-
-.operations-card__list li {
-  color: var(--text);
-}
-
-.card-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 1rem;
-}
-
-.action-card {
-  background: linear-gradient(180deg, rgba(255, 253, 248, 0.98) 0%, rgba(248, 243, 233, 0.96) 100%);
-  padding: 1.5rem;
-  border-radius: 20px;
-  border: 1px solid rgba(217, 200, 171, 0.9);
+  border: 1px solid rgba(192, 110, 50, 0.26);
   box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.72) inset,
-    0 14px 34px rgba(62, 42, 22, 0.1);
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
+    0 1px 0 rgba(255, 255, 255, 0.75) inset,
+    0 10px 22px rgba(62, 42, 22, 0.08);
 }
 
 .card {
@@ -421,6 +375,22 @@ textarea:focus {
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.75) inset,
     0 8px 20px rgba(62, 42, 22, 0.08);
+}
+
+.btn--accent {
+  background: linear-gradient(180deg, var(--pdt-brown-light) 0%, var(--pdt-brown) 100%);
+  color: var(--pdt-cream);
+  border-color: var(--pdt-brown-dark);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.34) inset,
+    0 12px 24px rgba(62, 42, 22, 0.14);
+}
+
+.btn--accent:hover,
+.btn--accent:focus-visible {
+  background: linear-gradient(180deg, var(--pdt-brown) 0%, var(--pdt-brown-dark) 100%);
+  color: var(--pdt-cream);
+  box-shadow: 0 14px 28px rgba(62, 42, 22, 0.18);
 }
 
 .btn--small {
