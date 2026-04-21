@@ -200,6 +200,15 @@ p {
   gap: 1rem;
 }
 
+.form-grid__full {
+  grid-column: 1 / -1;
+}
+
+.field-observaciones textarea {
+  min-height: 96px;
+  resize: vertical;
+}
+
 label {
   display: flex;
   flex-direction: column;

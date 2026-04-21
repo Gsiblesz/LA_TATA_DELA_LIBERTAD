@@ -23,6 +23,7 @@ const CONFIG = {
     mes: 13,
     timestamp: 14,
     numeroEntrega: 15,
+    observaciones: 16,
   },
 };
 
@@ -165,6 +166,7 @@ function createSolicitud_(payload) {
     mes,
     registroAutomatico,
     '',
+    payload.observaciones || '',
   ]);
 
   sheet.getRange(sheet.getLastRow() + 1, 1, rows.length, rows[0].length).setValues(rows);
@@ -266,6 +268,7 @@ function buildEntregaRow_(
     mes,
     registroAutomatico || new Date(),
     numeroEntrega || '',
+    payload.observaciones || '',
   ];
 }
 
@@ -320,6 +323,7 @@ function appendEntregaDirecta_(
     mes,
     registroAutomatico || new Date(),
     numeroEntrega || '',
+    payload.observaciones || '',
   ];
   sheet.appendRow(row);
   return sheet.getLastRow();
@@ -452,7 +456,7 @@ function normalizeNumber_(value) {
 function getAllDataRows_(sheet) {
   const lastRow = sheet.getLastRow();
   if (lastRow < 2) return [];
-  return sheet.getRange(2, 1, lastRow - 1, CONFIG.columns.numeroEntrega).getValues();
+  return sheet.getRange(2, 1, lastRow - 1, CONFIG.columns.observaciones).getValues();
 }
 
 function getBatchId_(row, index) {
@@ -483,7 +487,7 @@ function getTailRows_(sheet, count) {
   const totalDataRows = lastRow - 1;
   const rowsToRead = Math.min(count, totalDataRows);
   const startRow = lastRow - rowsToRead + 1;
-  return sheet.getRange(startRow, 1, rowsToRead, CONFIG.columns.numeroEntrega).getValues();
+  return sheet.getRange(startRow, 1, rowsToRead, CONFIG.columns.observaciones).getValues();
 }
 
 function appendMermaSinSolicitud_(sheet, payload, item, qty, productCatalogByCode, mes) {
@@ -503,6 +507,7 @@ function appendMermaSinSolicitud_(sheet, payload, item, qty, productCatalogByCod
     mes,
     new Date(),
     '',
+    payload.observaciones || '',
   ];
   sheet.appendRow(row);
   return sheet.getLastRow();
@@ -575,6 +580,7 @@ function buildMermaRow_(payload, item, qty, registroAutomatico, productCatalogBy
     mes,
     registroAutomatico || new Date(),
     '',
+    payload.observaciones || '',
   ];
 }
 
@@ -701,6 +707,7 @@ function diagnoseAccess_() {
     canWriteMainSheet: false,
     writeError: '',
   };
+    payload.observaciones || '',
 
   try {
     report.activeUserEmail = Session.getActiveUser().getEmail() || '';
@@ -769,6 +776,12 @@ function ensureMainSheetStructure_(sheet) {
   const headerValue = String(headerCell.getValue() || '').trim();
   if (!headerValue) {
     headerCell.setValue('NUMERO DE ENTREGA');
+  }
+
+  const observationsHeader = sheet.getRange(1, CONFIG.columns.observaciones);
+  const observationsValue = String(observationsHeader.getValue() || '').trim();
+  if (!observationsValue) {
+    observationsHeader.setValue('OBSERVACIONES');
   }
 }
 

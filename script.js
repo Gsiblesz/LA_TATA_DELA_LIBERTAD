@@ -264,9 +264,14 @@ function initSolicitudesForm() {
       hora: isForcedHoraSede(sede) ? FORCED_HORA_VALUE : formData.get('hora') || '',
       sede,
       responsable: formData.get('responsable') || '',
+      observaciones: String(formData.get('observaciones') || '').trim(),
       requestId: getFormRequestId(form),
       items,
     };
+
+    const observationFields = payload.observaciones
+      ? [{ label: 'Observaciones', value: payload.observaciones }]
+      : [];
 
     const confirmed = await requestTwoStepConfirmation({
       title: 'Confirmar solicitud de sede',
@@ -276,6 +281,7 @@ function initSolicitudesForm() {
         { label: 'Hora', value: payload.hora },
         { label: 'Sede', value: payload.sede },
         { label: 'Responsable', value: payload.responsable },
+        ...observationFields,
       ],
       items: payload.items.map((item) => ({
         code: item.code,
@@ -414,10 +420,15 @@ function initRegistrosForm() {
       hora: isForcedHoraSede(sede) ? FORCED_HORA_VALUE : formData.get('hora') || '',
       sede,
       responsableEntrega: formData.get('responsableEntrega') || '',
+      observaciones: String(formData.get('observaciones') || '').trim(),
       numeroEntrega,
       requestId: getFormRequestId(form),
       items,
     };
+
+    const observationFields = payload.observaciones
+      ? [{ label: 'Observaciones', value: payload.observaciones }]
+      : [];
 
     const confirmed = await requestTwoStepConfirmation({
       title: 'Confirmar entrega a sede',
@@ -428,6 +439,7 @@ function initRegistrosForm() {
         { label: 'Sede', value: payload.sede },
         { label: 'Responsable entrega', value: payload.responsableEntrega },
         { label: 'Número de Entrega', value: payload.numeroEntrega || '-' },
+        ...observationFields,
       ],
       items: payload.items.map((item) => ({
         code: item.productCode,
@@ -549,9 +561,14 @@ function initMermaForm() {
       hora: isForcedHoraSede(sede) ? FORCED_HORA_VALUE : formData.get('hora') || '',
       sede,
       responsable: formData.get('responsable') || '',
+      observaciones: String(formData.get('observaciones') || '').trim(),
       requestId: getFormRequestId(form),
       items,
     };
+
+    const observationFields = payload.observaciones
+      ? [{ label: 'Observaciones', value: payload.observaciones }]
+      : [];
 
     try {
       toggleFormLoading(form, true);
