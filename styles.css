@@ -604,7 +604,7 @@ table th {
 .confirm-modal__backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.68);
+  background: rgba(62, 42, 22, 0.24);
 }
 
 .confirm-modal__panel {
@@ -612,13 +612,13 @@ table th {
   width: min(860px, 100%);
   max-height: 88vh;
   overflow: auto;
-  background: linear-gradient(180deg, #1a1512 0%, #000000 52%, #0d0a08 100%);
-  color: var(--pdt-cream);
+  background: linear-gradient(180deg, #fffdf8 0%, #f8f3e9 100%);
+  color: var(--pdt-black);
   border-radius: 18px;
   box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.06) inset,
-    0 24px 50px rgba(0, 0, 0, 0.42);
-  border: 1px solid rgba(192, 110, 50, 0.36);
+    0 1px 0 rgba(255, 255, 255, 0.8) inset,
+    0 24px 50px rgba(62, 42, 22, 0.18);
+  border: 1px solid rgba(217, 200, 171, 0.96);
 }
 
 .confirm-modal__header,
@@ -627,20 +627,20 @@ table th {
   align-items: center;
   justify-content: space-between;
   padding: 1rem 1.25rem;
-  border-bottom: 1px solid rgba(192, 110, 50, 0.18);
+  border-bottom: 1px solid rgba(217, 200, 171, 0.92);
 }
 
 .confirm-modal__actions {
-  border-top: 1px solid rgba(192, 110, 50, 0.18);
+  border-top: 1px solid rgba(217, 200, 171, 0.92);
   border-bottom: 0;
   justify-content: flex-end;
   gap: 0.75rem;
 }
 
 .confirm-modal__close {
-  border: 1px solid rgba(192, 110, 50, 0.34);
-  background: rgba(255, 253, 248, 0.08);
-  color: var(--pdt-cream);
+  border: 1px solid rgba(192, 110, 50, 0.36);
+  background: linear-gradient(180deg, #fff8ef 0%, #f5ebdd 100%);
+  color: var(--pdt-black);
   border-radius: 10px;
   width: 36px;
   height: 36px;
@@ -657,7 +657,7 @@ table th {
 }
 
 .confirm-modal .muted {
-  color: rgba(248, 243, 233, 0.82);
+  color: rgba(17, 17, 17, 0.72);
 }
 
 .confirm-summary__fields {
@@ -668,14 +668,14 @@ table th {
 }
 
 .confirm-summary__field {
-  border: 1px solid rgba(192, 110, 50, 0.2);
-  background: rgba(255, 253, 248, 0.06);
+  border: 1px solid rgba(217, 200, 171, 0.96);
+  background: linear-gradient(180deg, #fffdf8 0%, #f5ebdd 100%);
   border-radius: 10px;
   padding: 0.55rem 0.7rem;
 }
 
 .confirm-summary__field dt {
-  color: rgba(248, 243, 233, 0.72);
+  color: rgba(93, 81, 71, 0.76);
   font-size: 0.78rem;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -683,14 +683,15 @@ table th {
 
 .confirm-summary__field dd {
   margin: 0.2rem 0 0;
-  color: var(--pdt-cream);
+  color: var(--pdt-black);
   font-weight: 600;
 }
 
 .confirm-summary__table-wrap {
-  border: 1px solid rgba(192, 110, 50, 0.2);
+  border: 1px solid rgba(217, 200, 171, 0.96);
   border-radius: 12px;
   overflow: auto;
+  background: #fffdf8;
 }
 
 .confirm-summary__table {
@@ -700,14 +701,14 @@ table th {
 
 .confirm-summary__table th,
 .confirm-summary__table td {
-  border-bottom: 1px solid rgba(192, 110, 50, 0.16);
+  border-bottom: 1px solid rgba(217, 200, 171, 0.84);
   padding: 0.65rem 0.8rem;
   text-align: left;
 }
 
 .confirm-summary__table th {
-  background: rgba(255, 253, 248, 0.08);
-  color: rgba(248, 243, 233, 0.76);
+  background: linear-gradient(180deg, #f6ead8 0%, #f0e3cf 100%);
+  color: var(--pdt-black);
   text-transform: uppercase;
   font-size: 0.78rem;
   letter-spacing: 0.04em;
@@ -720,8 +721,33 @@ table th {
   gap: 0.55rem;
   padding: 0.75rem;
   border-radius: 10px;
-  border: 1px solid rgba(192, 110, 50, 0.2);
-  background: rgba(255, 253, 248, 0.06);
+  border: 1px solid rgba(217, 200, 171, 0.96);
+  background: linear-gradient(180deg, #fffdf8 0%, #f5ebdd 100%);
+}
+
+.confirm-modal .btn--ghost {
+  background: linear-gradient(180deg, #fff8ef 0%, #f5ebdd 100%);
+  color: var(--pdt-black);
+  border: 1px solid rgba(192, 110, 50, 0.22);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.76) inset,
+    0 8px 18px rgba(62, 42, 22, 0.08);
+}
+
+.confirm-modal .btn:not(.btn--ghost) {
+  background: linear-gradient(180deg, var(--pdt-brown-light) 0%, var(--pdt-brown) 100%);
+  color: var(--pdt-cream);
+  border: 1px solid rgba(192, 110, 50, 0.34);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.34) inset,
+    0 12px 24px rgba(62, 42, 22, 0.14);
+}
+
+.confirm-modal .btn:not(.btn--ghost):hover,
+.confirm-modal .btn:not(.btn--ghost):focus-visible {
+  background: linear-gradient(180deg, var(--pdt-brown) 0%, var(--pdt-brown-dark) 100%);
+  color: var(--pdt-cream);
+  box-shadow: 0 14px 28px rgba(62, 42, 22, 0.18);
 }
 
 body.is-modal-open {
