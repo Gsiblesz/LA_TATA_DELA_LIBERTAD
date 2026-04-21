@@ -695,8 +695,6 @@ function diagnoseAccess_() {
     mainSheetName: CONFIG.mainSheetName,
     catalogSheetName: CONFIG.catalogSheetName,
     timeZone: CONFIG.timeZone,
-    activeUserEmail: '',
-    effectiveUserEmail: '',
     canOpenSpreadsheet: false,
     hasMainSheet: false,
     hasCatalogSheet: false,
@@ -707,15 +705,6 @@ function diagnoseAccess_() {
     canWriteMainSheet: false,
     writeError: '',
   };
-    payload.observaciones || '',
-
-  try {
-    report.activeUserEmail = Session.getActiveUser().getEmail() || '';
-  } catch (_) {}
-
-  try {
-    report.effectiveUserEmail = Session.getEffectiveUser().getEmail() || '';
-  } catch (_) {}
 
   const ss = SpreadsheetApp.openById(CONFIG.spreadsheetId);
   report.canOpenSpreadsheet = Boolean(ss);
