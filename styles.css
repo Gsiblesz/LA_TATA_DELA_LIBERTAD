@@ -67,13 +67,14 @@ p {
 
 .sidebar {
   width: 280px;
-  background: linear-gradient(180deg, #000000 0%, #17110d 100%);
-  color: var(--pdt-cream);
+  background: linear-gradient(180deg, #fffdf8 0%, #f8f3e9 100%);
+  color: var(--pdt-black);
   display: flex;
   flex-direction: column;
   padding: 2rem 1.5rem;
   gap: 2rem;
-  box-shadow: 14px 0 36px rgba(0, 0, 0, 0.12);
+  box-shadow: 14px 0 36px rgba(62, 42, 22, 0.08);
+  border-right: 1px solid rgba(192, 110, 50, 0.16);
 }
 
 .brand h1 {
@@ -82,7 +83,7 @@ p {
 }
 
 .sidebar .subtitle {
-  color: rgba(248, 243, 233, 0.78);
+  color: rgba(17, 17, 17, 0.74);
 }
 
 .sidebar__nav {
@@ -92,40 +93,41 @@ p {
 }
 
 .nav-btn {
-  border: 1px solid rgba(192, 110, 50, 0.18);
+  border: 1px solid rgba(192, 110, 50, 0.28);
   border-radius: 12px;
   padding: 0.85rem 1rem;
-  background: rgba(255, 253, 248, 0.04);
-  color: var(--pdt-cream);
+  background: linear-gradient(180deg, #fff8ef 0%, #f5ebdd 100%);
+  color: var(--pdt-black);
   font-size: 0.95rem;
   text-align: left;
   cursor: pointer;
-  transition: background 0.2s, transform 0.2s, border-color 0.2s, color 0.2s;
+  transition: background 0.2s, transform 0.2s, border-color 0.2s, color 0.2s, box-shadow 0.2s;
 }
 
 .nav-btn:hover,
 .nav-btn:focus-visible {
-  background: rgba(192, 110, 50, 0.16);
-  border-color: rgba(192, 110, 50, 0.34);
+  background: linear-gradient(180deg, var(--pdt-brown-light) 0%, var(--pdt-brown) 100%);
+  border-color: var(--pdt-brown-dark);
   color: var(--pdt-cream);
   outline: none;
   transform: translateX(2px);
+  box-shadow: 0 10px 22px rgba(62, 42, 22, 0.14);
 }
 
 .nav-btn.active {
-  background: linear-gradient(180deg, var(--pdt-cream) 0%, #f1e3ce 100%);
-  color: var(--pdt-black);
+  background: linear-gradient(180deg, var(--pdt-brown-light) 0%, var(--pdt-brown) 100%);
+  color: var(--pdt-cream);
   font-weight: 600;
-  border-color: rgba(192, 110, 50, 0.28);
+  border-color: var(--pdt-brown-dark);
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.72) inset,
-    0 10px 24px rgba(62, 42, 22, 0.12);
+    0 10px 24px rgba(62, 42, 22, 0.14);
 }
 
 .sidebar__footer {
   margin-top: auto;
   font-size: 0.8rem;
-  color: rgba(248, 243, 233, 0.62);
+  color: rgba(17, 17, 17, 0.72);
 }
 
 .main {
