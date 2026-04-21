@@ -1128,11 +1128,18 @@ function buildConfirmationSummary(fields, items, quantityLabel) {
   const safeItems = Array.isArray(items) ? items : [];
   const infoRows = safeFields
     .map(
-      (field) => `
-      <div class="confirm-summary__field">
+      (field) => {
+        const label = String(field.label || '').trim().toLowerCase();
+        const fieldClass = label === 'observaciones'
+          ? 'confirm-summary__field confirm-summary__field--wide'
+          : 'confirm-summary__field';
+
+        return `
+      <div class="${fieldClass}">
         <dt>${escapeHtml(field.label || '')}</dt>
         <dd>${escapeHtml(field.value || '--')}</dd>
-      </div>`
+      </div>`;
+      }
     )
     .join('');
 

@@ -685,6 +685,19 @@ table th {
   margin: 0.2rem 0 0;
   color: var(--pdt-black);
   font-weight: 600;
+  line-height: 1.35;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.confirm-summary__field--wide {
+  grid-column: 1 / -1;
+  min-height: 84px;
+}
+
+.confirm-summary__field--wide dd {
+  min-height: 2.7em;
 }
 
 .confirm-summary__table-wrap {
